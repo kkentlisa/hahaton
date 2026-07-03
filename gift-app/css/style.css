@@ -35,7 +35,10 @@
     --shadow-md: 0 8px 24px rgba(59, 59, 112, 0.12);
     --shadow-hover: 0 12px 32px rgba(248, 145, 126, 0.25);
 
+    /* Manrope — рабочий шрифт (даты, чипы, текст).
+       Fraunces — шрифт с характером, только для имён и заголовков. */
     --font-main: 'Manrope', sans-serif;
+    --font-display: 'Fraunces', serif;
     --font-size-sm: 14px;
     --font-size-base: 16px;
     --font-size-lg: 20px;
@@ -58,6 +61,7 @@ body {
 }
 
 h1, h2, h3 {
+    font-family: var(--font-display);
     font-weight: 700;
     color: var(--color-navy);
 }
@@ -72,16 +76,22 @@ button { font-family: inherit; cursor: pointer; border: none; }
     justify-content: space-between;
     padding: var(--space-lg) var(--space-2xl);
     background: var(--color-surface);
-    box-shadow: var(--shadow-sm);
+    border-bottom: 2px solid var(--color-border);
 }
 
 .site-header__logo {
     display: flex;
     align-items: center;
     gap: var(--space-sm);
-    font-weight: 800;
+    font-family: var(--font-display);
+    font-weight: 700;
     font-size: var(--font-size-lg);
     color: var(--color-navy);
+    letter-spacing: 0.01em;
+}
+
+.site-header__logo i {
+    color: var(--color-coral);
 }
 
 .btn {
@@ -99,6 +109,20 @@ button { font-family: inherit; cursor: pointer; border: none; }
 
 .btn-primary:hover {
     background: var(--color-accent-hover);
+    transform: translateY(-1px);
+}
+
+.btn-ghost {
+    background: transparent;
+    color: var(--color-text-secondary);
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-xs);
+    padding: var(--space-sm) var(--space-md);
+}
+
+.btn-ghost:hover {
+    color: var(--color-navy);
 }
 
 .chip {

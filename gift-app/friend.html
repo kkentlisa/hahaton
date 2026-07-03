@@ -1,16 +1,50 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
+    <meta charset="UTF-8">
+    <title>BdayHub</title>
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400..700&family=Manrope:wght@400;600;700;800&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
 
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/profiles.css">
-    <meta charset="UTF-8">
-    <title>Title</title>
 </head>
 <body>
 
+<header class="site-header">
+    <div class="site-header__logo">
+        <span class="site-header__logo-badge">
+            <i data-lucide="party-popper" style="width:18px;"></i>
+        </span>
+        BdayHub
+    </div>
+    <a href="my-profile.html" class="btn btn-primary">Мой профиль</a>
+</header>
+
+<main class="page-container">
+
+    <a href="index.html" class="back-link">
+        <i data-lucide="arrow-left" style="width:16px;"></i>
+        Все друзья
+    </a>
+
+    <div class="friend-layout">
+        <div id="friend-profile-content">
+        </div>
+
+        <aside class="chat-card chat-card--empty">
+            <div class="chat-card__empty-box">
+                <i data-lucide="message-circle" style="width:32px; height:32px;"></i>
+                <p>Место для обсуждения подарка</p>
+                <span>Чат будет подключен Участником 2</span>
+            </div>
+        </aside>
+    </div>
+</main>
+
+<script src="js/usersData.js"></script>
+<script src="js/profiles.js"></script>
 </body>
 </html>
