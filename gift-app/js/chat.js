@@ -62,12 +62,12 @@ export function initChatInterface(chatId, formId, inputId, messagesId, currentUs
             }
 
             msgElement.innerHTML = `
-                <span class="msg__sender">${escapeHtml(data.sender)}</span>
-                <div class="msg__bubble">
-                    <span class="msg__text">${escapeHtml(data.text)}</span>
-                    <span class="msg__time">${timeStr}</span>
-                </div>
-            `;
+        <span class="msg__sender">${escapeHtml(data.sender)}</span>
+        <div class="msg__bubble">
+            <span class="msg__text">${escapeHtml(data.text)}</span>
+            <span class="msg__time">${timeStr}</span>
+        </div>
+    `;
             container.appendChild(msgElement);
         });
 
@@ -107,28 +107,6 @@ export function initSubscribeButton(friendId, buttonId, currentUserName) {
     onSnapshot(chatRef, (snap) => {
         const participants = snap.exists() ? (snap.data().participants || []) : [];
         const isSubscribed = participants.includes(currentUserName);
-        btn.textContent = isSubscribed ? "✓ Вы подписаны" : "Подписаться";
-        btn.classList.toggle("is-subscribed", isSubscribed);
-        btn.dataset.subscribed = isSubscribed ? "1" : "0";
-    }, (error) => {
-        console.error("Ошибка при получении статуса подписки:", error);
-    });
-
-    btn.addEventListener("click", async () => {
-        const isSubscribed = btn.dataset.subscribed === "1";
-        try {
-            if (isSubscribed) {
-                await updateDoc(chatRef, { participants: arrayRemove(currentUserName) });
-            } else {
-                await setDoc(chatRef, {
-                    ownerId: friendId,
-                    participants: arrayUnion(currentUserName)
-                }, { merge: true });
-            }
-        } catch (error) {
-            console.error("Не удалось обновить подписку:", error);
-            alert("Не удалось изменить подписку. Загляни в консоль (F12).");
-        }
     });
 }
 

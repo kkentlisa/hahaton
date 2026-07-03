@@ -149,7 +149,7 @@
     padding: 0 var(--space-sm);
     letter-spacing: 0.02em;
 }
-.msg--own .msg__sender { display: none; }
+/*.msg--own .msg__sender { display: none; }*/
 
 .msg__bubble {
     padding: var(--space-sm) var(--space-md) 22px;
