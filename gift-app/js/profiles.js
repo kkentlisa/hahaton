@@ -60,6 +60,7 @@ let currentUserId = null;
 let usersUnsubscribe = null;
 let groupsUnsubscribe = null;
 let currentFilter = 'all';
+let selectedGroup = null;
 
 document.getElementById('logoutBtn')?.addEventListener('click', async () => {
     await logout();
@@ -253,6 +254,54 @@ function renderMyWishlist() {
     if (window.lucide) window.lucide.createIcons();
 }
 
+function renderGroupFilters() {
+    const filterBar = document.getElementById('filter-bar');
+    if (!filterBar) return;
+
+    const existingGroupBtns = filterBar.querySelectorAll('.filter-group-btn');
+    existingGroupBtns.forEach(btn => btn.remove());
+
+    if (!allGroups || allGroups.length === 0) return;
+
+    allGroups.forEach(g => {
+        const btn = document.createElement('button');
+        btn.className = 'filter-btn filter-group-btn';
+        btn.dataset.filter = 'group';
+        btn.dataset.group = g.name;
+        btn.textContent = g.name;
+        filterBar.appendChild(btn);
+    });
+
+    const filterBtns = filterBar.querySelectorAll('.filter-btn:not(.filter-group-btn)');
+    const groupBtns = filterBar.querySelectorAll('.filter-group-btn');
+
+    filterBtns.forEach(btn => {
+        btn.removeEventListener('click', handleFilterClick);
+        btn.addEventListener('click', handleFilterClick);
+    });
+
+    groupBtns.forEach(btn => {
+        btn.removeEventListener('click', handleFilterClick);
+        btn.addEventListener('click', handleFilterClick);
+    });
+}
+
+function handleFilterClick(e) {
+    const btn = e.currentTarget;
+    const allBtns = document.querySelectorAll('.filter-btn');
+    allBtns.forEach(b => b.classList.remove('is-active'));
+    btn.classList.add('is-active');
+
+    if (btn.dataset.filter === 'group') {
+        currentFilter = 'group';
+        selectedGroup = btn.dataset.group;
+    } else {
+        currentFilter = btn.dataset.filter;
+        selectedGroup = null;
+    }
+    renderFriends();
+}
+
 function renderFriends() {
     const friendsContainer = document.getElementById("friends-container");
     if (!friendsContainer) return;
@@ -264,6 +313,10 @@ function renderFriends() {
         filteredUsers = allUsers.filter(user =>
             user.id !== currentUserId && currentUserFriends.includes(user.id)
         );
+    } else if (currentFilter === 'group' && selectedGroup) {
+        filteredUsers = allUsers.filter(user =>
+            user.id !== currentUserId && (user.groups || []).includes(selectedGroup)
+        );
     } else {
         filteredUsers = allUsers.filter(user => user.id !== currentUserId);
     }
@@ -271,7 +324,7 @@ function renderFriends() {
     if (filteredUsers.length === 0) {
         friendsContainer.innerHTML = `
             <div class="empty-state">
-                <p class="empty-state__text">${currentFilter === 'friends' ? 'У вас пока нет друзей' : 'Пользователей пока нет'}</p>
+                <p class="empty-state__text">${currentFilter === 'friends' ? 'У вас пока нет друзей' : currentFilter === 'group' ? 'В этой группе пока нет пользователей' : 'Пользователей пока нет'}</p>
             </div>
         `;
         return;
@@ -314,18 +367,6 @@ function renderFriends() {
     if (window.lucide) window.lucide.createIcons();
 }
 
-function initFilters() {
-    const filterBtns = document.querySelectorAll('.filter-btn');
-    filterBtns.forEach(btn => {
-        btn.addEventListener('click', () => {
-            filterBtns.forEach(b => b.classList.remove('is-active'));
-            btn.classList.add('is-active');
-            currentFilter = btn.dataset.filter;
-            renderFriends();
-        });
-    });
-}
-
 window.toggleFriend = async function(userId) {
     if (!currentUserId || !currentUser) return;
     const isFriend = (currentUser.friends || []).includes(userId);
@@ -359,7 +400,7 @@ watchAuthState((authUser) => {
             window.dispatchEvent(new CustomEvent("currentUser-ready"));
             renderMyProfile();
             renderFriends();
-            initFilters();
+            renderGroupFilters();
             window.dispatchEvent(new CustomEvent("user-data-updated"));
         }
 
@@ -453,6 +494,9 @@ watchAuthState((authUser) => {
 
     groupsUnsubscribe = onSnapshot(groupsCol, (snapshot) => {
         allGroups = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
-        if (currentUser) renderMyGroups();
+        if (currentUser) {
+            renderMyGroups();
+            renderGroupFilters();
+        }
     });
 });
