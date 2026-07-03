@@ -39,6 +39,14 @@
         <div id="friend-profile-content"></div>
 
         <aside class="chat-wrap">
+
+            <div class="chat-overlay" id="js-chat-overlay">
+                <div class="chat-overlay__card">
+                    <div class="chat-overlay__icon">🔒</div>
+                    <p class="chat-overlay__title">Чат недоступен</p>
+                    <p class="chat-overlay__sub">Добавьте пользователя в друзья, чтобы видеть обсуждение подарка</p>
+                </div>
+            </div>
             <div class="chat-head">
                 <div class="chat-head__avatar" id="js-chat-avatar">
                     <img src="assets/default-avatar.png" alt="" onerror="this.style.display='none'; this.parentElement.textContent='🎂'" />
@@ -47,24 +55,6 @@
                     <span class="chat-head__name" id="js-chat-name">Обсуждение подарка</span>
                     <span class="chat-head__sub">только для друзей · именинник не видит</span>
                 </div>
-                <div class="chat-head__actions">
-                    <button class="chat-icon-btn" title="Поиск">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-                        </svg>
-                    </button>
-                </div>
-            </div>
-
-            <div class="chat-pinned" id="js-pinned" style="display:none">
-                <div class="chat-pinned__bar"></div>
-                <div class="chat-pinned__body">
-                    <span class="chat-pinned__label">Закреплено</span>
-                    <span class="chat-pinned__text" id="js-pinned-text"></span>
-                </div>
-                <svg class="chat-pinned__close" id="js-pinned-close" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-                    <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-                </svg>
             </div>
 
             <div class="chat-messages" id="js-chat-messages"></div>
@@ -145,7 +135,7 @@
 
 <script type="module">
     import { db } from "./js/config.js";
-    import { initChatInterface, initSubscribeButton } from "./js/chat.js";
+    import { initChatInterface, initChatOverlay } from "./js/chat.js";
 
     window.db = db;
 
@@ -161,7 +151,7 @@
             "js-chat-messages",
             userName
         );
-        initSubscribeButton(friendId, "js-subscribe-btn", userName);
+        initChatOverlay(friendId);
     }
 
     if (window.currentUser) {
@@ -169,17 +159,6 @@
     } else {
         window.addEventListener("currentUser-ready", startChat);
     }
-
-    window.addEventListener("chat-pinned-update", (e) => {
-        const wrap = document.getElementById("js-pinned");
-        const txt  = document.getElementById("js-pinned-text");
-        if (e.detail) { wrap.style.display = "flex"; txt.textContent = e.detail; }
-        else wrap.style.display = "none";
-    });
-
-    document.getElementById("js-pinned-close")?.addEventListener("click", () => {
-        document.getElementById("js-pinned").style.display = "none";
-    });
 
     const emojiBtn = document.getElementById("js-emoji-btn");
     const emojiPicker = document.getElementById("js-emoji-picker");
@@ -206,7 +185,6 @@
         const cursor = start + emoji.length;
         chatInput.focus();
         chatInput.setSelectionRange(cursor, cursor);
-        closeEmojiPicker();
     });
 
     document.addEventListener("click", (e) => {
