@@ -268,3 +268,44 @@
     .msg           { max-width: 86%; }
     .emoji-popup   { width: 260px; height: 280px; left: var(--space-sm); }
 }
+
+/* ─── ОВЕРЛЕЙ "не в друзьях" (участник 2) ───── */
+.chat-wrap { position: relative; }
+
+.chat-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 10;
+    border-radius: var(--radius-md);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    background: rgba(59, 59, 112, 0.45);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+.chat-overlay--hidden {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+}
+
+.chat-overlay__card {
+    background: var(--color-surface);
+    border-radius: var(--radius-lg);
+    padding: var(--space-xl) var(--space-2xl);
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-md);
+    box-shadow: var(--shadow-md);
+    max-width: 280px;
+    animation: pop-in 0.25s cubic-bezier(0.34, 1.3, 0.64, 1);
+}
+
+.chat-overlay__icon { font-size: 44px; line-height: 1; }
+.chat-overlay__title { font-size: var(--font-size-lg); font-weight: 800; color: var(--color-navy); }
+.chat-overlay__sub { font-size: var(--font-size-sm); color: var(--color-text-secondary); line-height: 1.55; }
