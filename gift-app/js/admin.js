@@ -1,5 +1,6 @@
 import { collection, onSnapshot, doc, deleteDoc, addDoc, updateDoc, arrayUnion, arrayRemove, } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 import { db } from "./config.js";
+import { watchAuthState, checkIsAdmin, logout } from "./auth.js";
 
 const usersCol = collection(db, "users");
 const groupsCol = collection(db, "groups");
@@ -14,20 +15,21 @@ let users = [];
 let groups = [];
 const expandedGroups = new Set();
 
+function startAdminData() {
+    onSnapshot(usersCol, (snapshot) => {
+        users = snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
+        document.getElementById('statUsers').textContent = users.length;
+        renderUsers();
+        renderGroups();
+    });
 
-onSnapshot(usersCol, (snapshot) => {
-    users = snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
-    document.getElementById('statUsers').textContent = users.length;
-    renderUsers();
-    renderGroups();
-});
-
-onSnapshot(groupsCol, (snapshot) => {
-    groups = snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
-    document.getElementById('statGroups').textContent = groups.length;
-    renderGroups();
-    renderGroupCheckboxes();
-});
+    onSnapshot(groupsCol, (snapshot) => {
+        groups = snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
+        document.getElementById('statGroups').textContent = groups.length;
+        renderGroups();
+        renderGroupCheckboxes();
+    });
+}
 
 userSearchEl.addEventListener('input', renderUsers);
 groupSearchEl.addEventListener('input', renderGroups);
@@ -336,3 +338,28 @@ function escapeHtml(str) {
         .replace(/"/g, '&quot;')
         .replace(/'/g, '&#39;');
 }
+
+
+document.getElementById('adminLogoutBtn')?.addEventListener('click', async () => {
+    await logout();
+    window.location.href = 'login.html?as=admin';
+});
+
+watchAuthState(async (user) => {
+    if (!user) {
+        window.location.href = 'login.html?as=admin';
+        return;
+    }
+
+    const isAdmin = await checkIsAdmin(user.uid);
+    if (!isAdmin) {
+        await logout();
+        window.location.href = 'login.html?as=admin';
+        return;
+    }
+
+    const emailEl = document.getElementById('adminEmailLabel');
+    if (emailEl) emailEl.textContent = user.email;
+
+    startAdminData();
+});
