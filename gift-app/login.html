@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Вход — Bday Hub</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/admin.css">
+    <link rel="stylesheet" href="css/auth.css">
+</head>
+<body class="auth-page">
+<div class="auth-shell">
+    <div class="auth-logo">🎂 WishBird</div>
+
+    <div class="auth-card">
+        <div class="auth-role-switch">
+            <button type="button" class="is-active" data-role="user">Я пользователь</button>
+            <button type="button" data-role="admin">Я администратор</button>
+        </div>
+
+        <div id="userAuth">
+            <div class="auth-mode-switch">
+                <button type="button" class="is-active" data-mode="login">Войти</button>
+                <button type="button" data-mode="register">Регистрация</button>
+            </div>
+
+            <div id="userError" class="auth-error"></div>
+
+            <form id="userLoginForm" class="auth-form">
+                <label class="auth-field">
+                    <span class="auth-field__label">Логин</span>
+                    <input type="text" id="loginUsername" autocomplete="username" required>
+                </label>
+                <label class="auth-field">
+                    <span class="auth-field__label">Пароль</span>
+                    <input type="password" id="loginPassword" autocomplete="current-password" required>
+                </label>
+                <button type="submit" class="btn btn-primary auth-submit">Войти</button>
+            </form>
+
+            <form id="userRegisterForm" class="auth-form" style="display:none;">
+                <label class="auth-field">
+                    <span class="auth-field__label">Имя</span>
+                    <input type="text" id="regName" required>
+                </label>
+                <label class="auth-field">
+                    <span class="auth-field__label">Дата рождения</span>
+                    <input type="date" id="regBirthday" required>
+                </label>
+                <div class="auth-field">
+                    <span class="auth-field__label">Группы (необязательно)</span>
+                    <div id="regGroups" class="auth-chip-toggles"></div>
+                </div>
+                <label class="auth-field">
+                    <span class="auth-field__label">Желаемые подарки (необязательно, по одному в строке)</span>
+                    <textarea id="regGifts"></textarea>
+                </label>
+                <label class="auth-field">
+                    <span class="auth-field__label">Логин</span>
+                    <input type="text" id="regUsername" autocomplete="username" required>
+                    <span class="auth-hint">Должен быть уникальным — если занят, попросим выбрать другой</span>
+                </label>
+                <label class="auth-field">
+                    <span class="auth-field__label">Пароль</span>
+                    <input type="password" id="regPassword" autocomplete="new-password" minlength="6" required>
+                    <span class="auth-hint">Минимум 6 символов</span>
+                </label>
+                <button type="submit" class="btn btn-primary auth-submit">Зарегистрироваться</button>
+            </form>
+        </div>
+
+        <div id="adminAuth" style="display:none;">
+            <div class="auth-mode-switch is-single">
+                <button type="button" class="is-active">Вход для администратора</button>
+            </div>
+
+            <div id="adminError" class="auth-error"></div>
+
+            <form id="adminLoginForm" class="auth-form">
+                <label class="auth-field">
+                    <span class="auth-field__label">Email</span>
+                    <input type="email" id="adminEmail" autocomplete="username" required>
+                </label>
+                <label class="auth-field">
+                    <span class="auth-field__label">Пароль</span>
+                    <input type="password" id="adminPassword" autocomplete="current-password" required>
+                </label>
+                <button type="submit" class="btn btn-primary auth-submit">Войти как администратор</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script type="module">
+    import { registerUser, loginUser, loginAdmin } from "./js/auth.js";
+    import { db } from "./js/config.js";
+    import { collection, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+    const roleButtons = document.querySelectorAll('[data-role]');
+    const userAuth = document.getElementById('userAuth');
+    const adminAuth = document.getElementById('adminAuth');
+
+    roleButtons.forEach((btn) => {
+        btn.addEventListener('click', () => {
+            roleButtons.forEach((b) => b.classList.remove('is-active'));
+            btn.classList.add('is-active');
+            const isAdmin = btn.dataset.role === 'admin';
+            userAuth.style.display = isAdmin ? 'none' : 'block';
+            adminAuth.style.display = isAdmin ? 'block' : 'none';
+        });
+    });
+
+    const modeButtons = document.querySelectorAll('[data-mode]');
+    const userLoginForm = document.getElementById('userLoginForm');
+    const userRegisterForm = document.getElementById('userRegisterForm');
+
+    modeButtons.forEach((btn) => {
+        btn.addEventListener('click', () => {
+            modeButtons.forEach((b) => b.classList.remove('is-active'));
+            btn.classList.add('is-active');
+            const isRegister = btn.dataset.mode === 'register';
+            userLoginForm.style.display = isRegister ? 'none' : 'flex';
+            userRegisterForm.style.display = isRegister ? 'flex' : 'none';
+        });
+    });
+
+
+    const regGroupsEl = document.getElementById('regGroups');
+    onSnapshot(collection(db, "groups"), (snapshot) => {
+        const groups = snapshot.docs.map((d) => d.data().name).filter(Boolean);
+        if (groups.length === 0) {
+            regGroupsEl.innerHTML = "<span class='auth-hint'>Групп пока нет — можно присоединиться позже.</span>";
+            return;
+        }
+        regGroupsEl.innerHTML = groups.map((name) => `
+            <button type="button" class="chip-toggle" data-value="${name}">${name}</button>
+        `).join('');
+    });
+    regGroupsEl.addEventListener('click', (e) => {
+        const chip = e.target.closest('.chip-toggle');
+        if (chip) chip.classList.toggle('is-selected');
+    });
+
+    function showError(elId, message) {
+        const el = document.getElementById(elId);
+        el.textContent = message;
+        el.classList.add('is-visible');
+    }
+    function hideError(elId) {
+        document.getElementById(elId).classList.remove('is-visible');
+    }
+
+    userLoginForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        hideError('userError');
+        try {
+            await loginUser(
+                document.getElementById('loginUsername').value,
+                document.getElementById('loginPassword').value
+            );
+            window.location.href = "index.html";
+        } catch (error) {
+            showError('userError', error.message);
+        }
+    });
+
+    userRegisterForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        hideError('userError');
+
+        const gifts = document.getElementById('regGifts').value
+            .split('\n')
+            .map((s) => s.trim())
+            .filter(Boolean);
+        const groups = [...regGroupsEl.querySelectorAll('.chip-toggle.is-selected')].map((c) => c.dataset.value);
+
+        try {
+            await registerUser({
+                username: document.getElementById('regUsername').value,
+                password: document.getElementById('regPassword').value,
+                name: document.getElementById('regName').value.trim(),
+                birthday: document.getElementById('regBirthday').value,
+                groups,
+                gifts,
+            });
+            window.location.href = "index.html";
+        } catch (error) {
+            showError('userError', error.message);
+        }
+    });
+
+    document.getElementById('adminLoginForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        hideError('adminError');
+        try {
+            await loginAdmin(
+                document.getElementById('adminEmail').value,
+                document.getElementById('adminPassword').value
+            );
+            window.location.href = "admin.html";
+        } catch (error) {
+            showError('adminError', error.message);
+        }
+    });
+
+    if (new URLSearchParams(location.search).get('as') === 'admin') {
+        document.querySelector('[data-role="admin"]').click();
+    }
+</script>
+</body>
+</html>
