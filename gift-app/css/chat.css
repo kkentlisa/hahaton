@@ -149,7 +149,6 @@
     padding: 0 var(--space-sm);
     letter-spacing: 0.02em;
 }
-/*.msg--own .msg__sender { display: none; }*/
 
 .msg__bubble {
     padding: var(--space-sm) var(--space-md) 22px;
@@ -175,6 +174,7 @@
     background: var(--color-surface);
     border-top: 1.5px solid var(--color-border);
     flex-shrink: 0;
+    position: relative;
 }
 
 .chat-form {
@@ -224,9 +224,34 @@
 .chat-send:hover { background: var(--color-rose); box-shadow: var(--shadow-hover); }
 .chat-send:active { transform: scale(0.9); }
 
+.emoji-popup {
+    position: absolute;
+    bottom: calc(100% + 8px);
+    left: var(--space-lg);
+    z-index: 50;
+    width: 300px;
+    height: 320px;
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-md);
+    border: 1.5px solid var(--color-border);
+    overflow: hidden;
+    background: var(--color-surface);
+
+    --num-columns: 8;
+    --emoji-size: 1.25rem;
+    --emoji-padding: 6px;
+    --background: var(--color-surface);
+    --border-color: var(--color-border);
+    --indicator-color: var(--color-secondary);
+    --category-emoji-size: 1rem;
+    --input-border-color: var(--color-border);
+    --input-font-color: var(--color-text-primary);
+}
+
 @media (max-width: 480px) {
     .chat-head     { padding: var(--space-sm) var(--space-md); min-height: 56px; }
     .chat-messages { padding: var(--space-md); }
     .chat-composer { padding: var(--space-sm) var(--space-md); }
     .msg           { max-width: 86%; }
+    .emoji-popup   { width: 260px; height: 280px; left: var(--space-sm); }
 }
