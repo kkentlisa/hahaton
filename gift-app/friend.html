@@ -10,7 +10,7 @@
 
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/profiles.css">
-</head>
+    <link rel="stylesheet" href="css/chat.css"> </head>
 <body>
 
 <header class="site-header">
@@ -34,11 +34,68 @@
         <div id="friend-profile-content">
         </div>
 
-        <aside class="chat-card chat-card--empty">
-            <div class="chat-card__empty-box">
-                <i data-lucide="message-circle" style="width:32px; height:32px;"></i>
-                <p>Место для обсуждения подарка</p>
-                <span>Чат будет подключен Участником 2</span>
+        <aside class="chat-wrap">
+            <div class="chat-head">
+                <div class="chat-head__avatar" id="js-chat-avatar">
+                    <img src="assets/default-avatar.png" alt=""
+                         onerror="this.style.display='none'; this.parentElement.textContent='🎂'" />
+                </div>
+                <div class="chat-head__info">
+                    <span class="chat-head__name" id="js-chat-name">Обсуждение подарка</span>
+                    <span class="chat-head__sub">только для друзей · именинник не видит</span>
+                </div>
+                <div class="chat-head__actions">
+                    <button class="chat-icon-btn" title="Поиск">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <div class="chat-pinned" id="js-pinned" style="display:none">
+                <div class="chat-pinned__bar"></div>
+                <div class="chat-pinned__body">
+                    <span class="chat-pinned__label">Закреплено</span>
+                    <span class="chat-pinned__text" id="js-pinned-text"></span>
+                </div>
+                <svg class="chat-pinned__close" id="js-pinned-close" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                    <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+            </div>
+
+            <div class="chat-messages" id="js-chat-messages">
+                <div class="chat-empty">
+                    <div class="chat-empty__icon">🎁</div>
+                    <p class="chat-empty__title">Начните обсуждение</p>
+                    <p class="chat-empty__sub">Выберите подарок и договоритесь с друзьями</p>
+                </div>
+            </div>
+
+            <div class="chat-composer">
+                <form class="chat-form" id="js-chat-form" autocomplete="off">
+                    <button type="button" class="chat-icon-btn" title="Эмодзи">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"/>
+                            <path d="M8 14s1.5 2 4 2 4-2 4-2"/>
+                            <line x1="9" y1="9" x2="9.01" y2="9"/>
+                            <line x1="15" y1="9" x2="15.01" y2="9"/>
+                        </svg>
+                    </button>
+                    <input
+                            class="chat-input"
+                            id="js-chat-input"
+                            type="text"
+                            placeholder="Написать сообщение…"
+                            maxlength="500"
+                    />
+                    <button class="chat-send" type="submit" aria-label="Отправить">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="22" y1="2" x2="11" y2="13"/>
+                            <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+                        </svg>
+                    </button>
+                </form>
             </div>
         </aside>
     </div>
@@ -46,5 +103,55 @@
 
 <script src="js/usersData.js"></script>
 <script src="js/profiles.js"></script>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getFirestore }   from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    const app = initializeApp({
+        apiKey:            "AIzaSyAe4ZXtxKH119CrCWBXM7ZjXDyiH5n3tjU",
+        authDomain:        "birthday-wishes-hits.firebaseapp.com",
+        projectId:         "birthday-wishes-hits",
+        storageBucket:     "birthday-wishes-hits.appspot.com",
+        messagingSenderId: "650338158827",
+        appId:             "1:650338158827:web:0bd1caba97a65a2de1d6ae"
+    });
+    window.db = getFirestore(app);
+    window.dispatchEvent(new Event("firebase-ready"));
+</script>
+
+<script type="module" src="js/notifications.js"></script>
+
+<script type="module">
+    import { initChatInterface } from "./js/chat.js";
+
+    const params   = new URLSearchParams(location.search);
+    const friendId = params.get("id") || "default";
+
+    function getCurrentUserName() {
+        if (window.currentUser?.name) return window.currentUser.name;
+        return localStorage.getItem("wishbird_username") || "Гость";
+    }
+
+    window.addEventListener("firebase-ready", () => {
+        initChatInterface(
+            `friend_${friendId}`,
+            "js-chat-form",
+            "js-chat-input",
+            "js-chat-messages",
+            getCurrentUserName()
+        );
+    });
+
+    window.addEventListener("chat-pinned-update", (e) => {
+        const wrap = document.getElementById("js-pinned");
+        const txt  = document.getElementById("js-pinned-text");
+        if (e.detail) { wrap.style.display = "flex"; txt.textContent = e.detail; }
+        else wrap.style.display = "none";
+    });
+
+    document.getElementById("js-pinned-close")?.addEventListener("click", () => {
+        document.getElementById("js-pinned").style.display = "none";
+    });
+</script>
 </body>
 </html>
