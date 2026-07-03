@@ -73,6 +73,7 @@ watchAuthState((authUser) => {
         friendsContainer.innerHTML = "";
 
         users.forEach(user => {
+            if (user.id === currentUser.id) return;
             const days = getDaysToBirthday(user.birthday);
             const daysText = formatDaysText(days);
             const initials = getInitials(user.name);
