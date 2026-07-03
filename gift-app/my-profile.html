@@ -47,6 +47,66 @@
     </section>
 </main>
 
+<!-- Templates -->
+<template id="my-profile-hero-template">
+    <section class="profile-hero">
+        <div class="profile-hero__banner"></div>
+        <div class="profile-hero__body">
+            <div class="profile-hero__avatar js-avatar"></div>
+            <div class="profile-hero__info">
+                <h1 class="profile-hero__name js-name"></h1>
+                <div class="profile-hero__date">
+                    <i data-lucide="calendar" style="width:16px; vertical-align:middle;"></i>
+                    <span class="js-date"></span>
+                </div>
+                <div class="profile-hero__groups js-groups"></div>
+            </div>
+        </div>
+    </section>
+</template>
+
+<template id="my-groups-template">
+    <div class="groups-list js-groups-list"></div>
+    <div class="groups-available js-groups-available"></div>
+    <div class="groups-create">
+        <form id="groupCreateForm" class="inline-form">
+            <input type="text" id="groupCreateInput" placeholder="Название новой группы" class="input-field" required>
+            <button type="submit" class="btn btn-primary btn-sm">Создать группу</button>
+        </form>
+    </div>
+</template>
+
+<template id="my-wishlist-template">
+    <div class="wishlist-items js-wishlist-items"></div>
+    <div class="gift-add">
+        <form id="giftAddForm" class="inline-form">
+            <input type="text" id="giftAddInput" placeholder="Название подарка" class="input-field" required>
+            <button type="submit" class="btn btn-primary btn-sm">Добавить подарок</button>
+        </form>
+    </div>
+</template>
+
+<template id="group-chip-template">
+    <div class="group-chip">
+        <span class="js-group-name"></span>
+        <button class="btn-group-leave" data-group="" title="Выйти из группы">×</button>
+    </div>
+</template>
+
+<template id="wishlist-item-template">
+    <div class="wishlist-item">
+        <div class="wishlist-item__icon">
+            <i data-lucide="gift" style="width:18px;"></i>
+        </div>
+        <span class="wishlist-item__title js-title"></span>
+        <button class="btn-gift-remove" data-gift="" title="Удалить">×</button>
+    </div>
+</template>
+
+<template id="empty-chip-template">
+    <span class="chip-muted js-empty-text"></span>
+</template>
+
 <script type="module" src="js/profiles.js"></script>
 </body>
 </html>

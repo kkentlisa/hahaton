@@ -246,7 +246,7 @@
 
 .profile-hero__body {
     display: flex;
-    align-items: flex-end;
+    align-items: flex-start;
     gap: var(--space-xl);
     padding: 0 var(--space-2xl) var(--space-2xl);
     margin-top: -55px;
@@ -284,6 +284,7 @@
     display: flex;
     flex-wrap: wrap;
     gap: var(--space-xs);
+    margin-top: var(--space-md);
 }
 
 .section-header {

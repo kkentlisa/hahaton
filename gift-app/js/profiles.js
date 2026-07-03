@@ -1,6 +1,7 @@
 import { db } from "./config.js";
 import { collection, onSnapshot, doc, updateDoc, addDoc, arrayUnion, arrayRemove, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 import { watchAuthState, logout } from "./auth.js";
+import { initFilters, renderGroupFilters, filterUsers, getEmptyStateText } from "./filters.js";
 
 function getDaysToBirthday(dateString) {
     if (!dateString) return 0;
@@ -41,15 +42,6 @@ function formatBirthDate(dateString, includeYear = false) {
     return `${day} ${month}`;
 }
 
-function escapeHtml(str) {
-    return String(str)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#39;');
-}
-
 const usersCol = collection(db, "users");
 const groupsCol = collection(db, "groups");
 
@@ -59,13 +51,13 @@ let currentUser = null;
 let currentUserId = null;
 let usersUnsubscribe = null;
 let groupsUnsubscribe = null;
-let currentFilter = 'all';
-let selectedGroup = null;
 
 document.getElementById('logoutBtn')?.addEventListener('click', async () => {
     await logout();
     window.location.href = "login.html";
 });
+
+initFilters(renderFriends);
 
 async function updateGroupFriends() {
     if (!currentUserId || !currentUser) return;
@@ -106,28 +98,30 @@ function renderMyProfile() {
     if (!currentUser) return;
 
     const myHeroContainer = document.getElementById("my-hero-container");
-    if (myHeroContainer) {
-        const initials = getInitials(currentUser.name);
-        const dateStr = formatBirthDate(currentUser.birthday, true);
-        const groupsHtml = (currentUser.groups || []).map(g => `<span class="chip">${escapeHtml(g)}</span>`).join("");
+    if (!myHeroContainer) return;
 
-        myHeroContainer.innerHTML = `
-            <section class="profile-hero">
-                <div class="profile-hero__banner"></div>
-                <div class="profile-hero__body">
-                    <div class="profile-hero__avatar">${initials}</div>
-                    <div class="profile-hero__info">
-                        <h1 class="profile-hero__name">${escapeHtml(currentUser.name)}</h1>
-                        <div class="profile-hero__date">
-                            <i data-lucide="calendar" style="width:16px; vertical-align:middle;"></i> ${dateStr}
-                        </div>
-                        <div class="profile-hero__groups">${groupsHtml}</div>
-                    </div>
-                </div>
-            </section>
-        `;
-        if (window.lucide) window.lucide.createIcons();
-    }
+    const template = document.getElementById("my-profile-hero-template");
+    const node = template.content.cloneNode(true);
+
+    const initials = getInitials(currentUser.name);
+    const dateStr = formatBirthDate(currentUser.birthday, true);
+
+    node.querySelector(".js-avatar").textContent = initials;
+    node.querySelector(".js-name").textContent = currentUser.name;
+    node.querySelector(".js-date").textContent = dateStr;
+
+    const groupsContainer = node.querySelector(".js-groups");
+    (currentUser.groups || []).forEach(g => {
+        const chip = document.createElement("span");
+        chip.className = "chip";
+        chip.textContent = g;
+        groupsContainer.appendChild(chip);
+    });
+
+    myHeroContainer.innerHTML = "";
+    myHeroContainer.appendChild(node);
+
+    if (window.lucide) window.lucide.createIcons();
 
     renderMyGroups();
     renderMyWishlist();
@@ -137,33 +131,43 @@ function renderMyGroups() {
     const container = document.getElementById("my-groups-container");
     if (!container) return;
 
+    const template = document.getElementById("my-groups-template");
+    const node = template.content.cloneNode(true);
+
+    const groupsList = node.querySelector(".js-groups-list");
+    const groupsAvailable = node.querySelector(".js-groups-available");
+
     const userGroups = currentUser.groups || [];
     const availableGroups = allGroups.filter(g => !userGroups.includes(g.name));
 
-    container.innerHTML = `
-        <div class="groups-list">
-            ${userGroups.length === 0 ? '<span class="chip-muted">Вы пока не состоите ни в одной группе</span>' :
-        userGroups.map(g => `
-                <div class="group-chip">
-                    <span>${escapeHtml(g)}</span>
-                    <button class="btn-group-leave" data-group="${escapeHtml(g)}" title="Выйти из группы">×</button>
-                </div>
-            `).join('')}
-        </div>
-        ${availableGroups.length > 0 ? `
-            <div class="groups-available">
-                ${availableGroups.map(g => `
-                    <button class="btn-group-join btn btn-secondary btn-sm" data-group="${escapeHtml(g.name)}">+ ${escapeHtml(g.name)}</button>
-                `).join('')}
-            </div>
-        ` : ''}
-        <div class="groups-create">
-            <form id="groupCreateForm" class="inline-form">
-                <input type="text" id="groupCreateInput" placeholder="Название новой группы" class="input-field" required>
-                <button type="submit" class="btn btn-primary btn-sm">Создать группу</button>
-            </form>
-        </div>
-    `;
+    if (userGroups.length === 0) {
+        const emptyTemplate = document.getElementById("empty-chip-template");
+        const emptyNode = emptyTemplate.content.cloneNode(true);
+        emptyNode.querySelector(".js-empty-text").textContent = "Вы пока не состоите ни в одной группе";
+        groupsList.appendChild(emptyNode);
+    } else {
+        const chipTemplate = document.getElementById("group-chip-template");
+        userGroups.forEach(groupName => {
+            const chipNode = chipTemplate.content.cloneNode(true);
+            chipNode.querySelector(".js-group-name").textContent = groupName;
+            const leaveBtn = chipNode.querySelector(".btn-group-leave");
+            leaveBtn.dataset.group = groupName;
+            groupsList.appendChild(chipNode);
+        });
+    }
+
+    if (availableGroups.length > 0) {
+        availableGroups.forEach(g => {
+            const btn = document.createElement("button");
+            btn.className = "btn-group-join btn btn-secondary btn-sm";
+            btn.dataset.group = g.name;
+            btn.textContent = `+ ${g.name}`;
+            groupsAvailable.appendChild(btn);
+        });
+    }
+
+    container.innerHTML = "";
+    container.appendChild(node);
 
     container.querySelectorAll('.btn-group-join').forEach(btn => {
         btn.addEventListener('click', async () => {
@@ -205,28 +209,30 @@ function renderMyWishlist() {
     const container = document.getElementById("my-wishlist-container");
     if (!container) return;
 
+    const template = document.getElementById("my-wishlist-template");
+    const node = template.content.cloneNode(true);
+
+    const wishlistItems = node.querySelector(".js-wishlist-items");
     const gifts = currentUser.gifts || [];
 
-    container.innerHTML = `
-        <div class="wishlist-items">
-            ${gifts.length === 0 ? '<span class="chip-muted">Список подарков пуст</span>' :
-        gifts.map(g => `
-                <div class="wishlist-item">
-                    <div class="wishlist-item__icon">
-                        <i data-lucide="gift" style="width:18px;"></i>
-                    </div>
-                    <span class="wishlist-item__title">${escapeHtml(g)}</span>
-                    <button class="btn-gift-remove" data-gift="${escapeHtml(g)}" title="Удалить">×</button>
-                </div>
-            `).join('')}
-        </div>
-        <div class="gift-add">
-            <form id="giftAddForm" class="inline-form">
-                <input type="text" id="giftAddInput" placeholder="Название подарка" class="input-field" required>
-                <button type="submit" class="btn btn-primary btn-sm">Добавить подарок</button>
-            </form>
-        </div>
-    `;
+    if (gifts.length === 0) {
+        const emptyTemplate = document.getElementById("empty-chip-template");
+        const emptyNode = emptyTemplate.content.cloneNode(true);
+        emptyNode.querySelector(".js-empty-text").textContent = "Список подарков пуст";
+        wishlistItems.appendChild(emptyNode);
+    } else {
+        const itemTemplate = document.getElementById("wishlist-item-template");
+        gifts.forEach(giftName => {
+            const itemNode = itemTemplate.content.cloneNode(true);
+            itemNode.querySelector(".js-title").textContent = giftName;
+            const removeBtn = itemNode.querySelector(".btn-gift-remove");
+            removeBtn.dataset.gift = giftName;
+            wishlistItems.appendChild(itemNode);
+        });
+    }
+
+    container.innerHTML = "";
+    container.appendChild(node);
 
     container.querySelectorAll('.btn-gift-remove').forEach(btn => {
         btn.addEventListener('click', async () => {
@@ -254,52 +260,10 @@ function renderMyWishlist() {
     if (window.lucide) window.lucide.createIcons();
 }
 
-function renderGroupFilters() {
-    const filterBar = document.getElementById('filter-bar');
-    if (!filterBar) return;
-
-    const existingGroupBtns = filterBar.querySelectorAll('.filter-group-btn');
-    existingGroupBtns.forEach(btn => btn.remove());
-
-    if (!allGroups || allGroups.length === 0) return;
-
-    allGroups.forEach(g => {
-        const btn = document.createElement('button');
-        btn.className = 'filter-btn filter-group-btn';
-        btn.dataset.filter = 'group';
-        btn.dataset.group = g.name;
-        btn.textContent = g.name;
-        filterBar.appendChild(btn);
-    });
-
-    const filterBtns = filterBar.querySelectorAll('.filter-btn:not(.filter-group-btn)');
-    const groupBtns = filterBar.querySelectorAll('.filter-group-btn');
-
-    filterBtns.forEach(btn => {
-        btn.removeEventListener('click', handleFilterClick);
-        btn.addEventListener('click', handleFilterClick);
-    });
-
-    groupBtns.forEach(btn => {
-        btn.removeEventListener('click', handleFilterClick);
-        btn.addEventListener('click', handleFilterClick);
-    });
-}
-
-function handleFilterClick(e) {
-    const btn = e.currentTarget;
-    const allBtns = document.querySelectorAll('.filter-btn');
-    allBtns.forEach(b => b.classList.remove('is-active'));
-    btn.classList.add('is-active');
-
-    if (btn.dataset.filter === 'group') {
-        currentFilter = 'group';
-        selectedGroup = btn.dataset.group;
-    } else {
-        currentFilter = btn.dataset.filter;
-        selectedGroup = null;
-    }
-    renderFriends();
+function pluralizeGifts(count) {
+    if (count === 1) return 'подарок';
+    if (count > 1 && count < 5) return 'подарка';
+    return 'подарков';
 }
 
 function renderFriends() {
@@ -307,64 +271,127 @@ function renderFriends() {
     if (!friendsContainer) return;
 
     const currentUserFriends = currentUser?.friends || [];
-    let filteredUsers = [];
+    const filteredUsers = filterUsers(allUsers, currentUserId, currentUserFriends);
 
-    if (currentFilter === 'friends') {
-        filteredUsers = allUsers.filter(user =>
-            user.id !== currentUserId && currentUserFriends.includes(user.id)
-        );
-    } else if (currentFilter === 'group' && selectedGroup) {
-        filteredUsers = allUsers.filter(user =>
-            user.id !== currentUserId && (user.groups || []).includes(selectedGroup)
-        );
-    } else {
-        filteredUsers = allUsers.filter(user => user.id !== currentUserId);
-    }
+    friendsContainer.innerHTML = "";
 
     if (filteredUsers.length === 0) {
-        friendsContainer.innerHTML = `
-            <div class="empty-state">
-                <p class="empty-state__text">${currentFilter === 'friends' ? 'У вас пока нет друзей' : currentFilter === 'group' ? 'В этой группе пока нет пользователей' : 'Пользователей пока нет'}</p>
-            </div>
-        `;
+        const emptyTemplate = document.getElementById("empty-state-template");
+        const emptyNode = emptyTemplate.content.cloneNode(true);
+        emptyNode.querySelector(".empty-state__text").textContent = getEmptyStateText();
+        friendsContainer.appendChild(emptyNode);
         return;
     }
 
-    friendsContainer.innerHTML = "";
+    const cardTemplate = document.getElementById("friend-card-template");
+
     filteredUsers.forEach(user => {
         const days = getDaysToBirthday(user.birthday);
         const daysText = formatDaysText(days);
         const initials = getInitials(user.name);
         const dateStr = formatBirthDate(user.birthday);
-        const groupsHtml = (user.groups || []).map(g => `<span class="chip">${escapeHtml(g)}</span>`).join("");
         const giftsCount = user.gifts ? user.gifts.length : 0;
         const isFriend = currentUserFriends.includes(user.id);
 
-        const card = document.createElement("a");
+        const node = cardTemplate.content.cloneNode(true);
+        const card = node.querySelector(".friend-card");
         card.href = `friend.html?id=${user.id}`;
-        card.className = "friend-card";
-        card.innerHTML = `
-            <div class="friend-card__banner">
-                <span class="friend-card__banner-countdown">
-                    <strong>${days}</strong>
-                    <span>${daysText}</span>
-                </span>
-                ${isFriend ? '<span class="friend-badge">👥 В друзьях</span>' : ''}
-            </div>
-            <div class="friend-card__avatar">${initials}</div>
-            <div class="friend-card__body">
-                <div class="friend-card__name">${escapeHtml(user.name)}</div>
-                <div class="friend-card__date">${dateStr}</div>
-                <div class="friend-card__groups">${groupsHtml}</div>
-                <div class="wishlist-count">
-                    <i data-lucide="gift" style="width:14px;"></i>
-                    ${giftsCount} ${giftsCount === 1 ? 'подарок' : giftsCount > 1 && giftsCount < 5 ? 'подарка' : 'подарков'}
-                </div>
-            </div>
-        `;
-        friendsContainer.appendChild(card);
+
+        card.querySelector(".js-days").textContent = days;
+        card.querySelector(".js-days-text").textContent = daysText;
+        card.querySelector(".js-avatar").textContent = initials;
+        card.querySelector(".js-name").textContent = user.name;
+        card.querySelector(".js-date").textContent = dateStr;
+        card.querySelector(".js-gifts-count").textContent = `${giftsCount} ${pluralizeGifts(giftsCount)}`;
+        card.querySelector(".js-friend-badge").hidden = !isFriend;
+
+        const groupsContainer = card.querySelector(".js-groups");
+        (user.groups || []).forEach(g => {
+            const chip = document.createElement("span");
+            chip.className = "chip";
+            chip.textContent = g;
+            groupsContainer.appendChild(chip);
+        });
+
+        friendsContainer.appendChild(node);
     });
+
     if (window.lucide) window.lucide.createIcons();
+}
+
+function renderFriendProfile() {
+    const friendProfileContainer = document.getElementById("friend-profile-content");
+    if (!friendProfileContainer) return;
+
+    const params = new URLSearchParams(location.search);
+    const friendId = params.get("id");
+    const friend = allUsers.find(u => u.id === friendId);
+
+    friendProfileContainer.innerHTML = "";
+
+    if (!friend) {
+        const notFoundTemplate = document.getElementById("friend-not-found-template");
+        friendProfileContainer.appendChild(notFoundTemplate.content.cloneNode(true));
+        return;
+    }
+
+    const days = getDaysToBirthday(friend.birthday);
+    const daysText = formatDaysText(days);
+    const initials = getInitials(friend.name);
+    const dateStr = formatBirthDate(friend.birthday, true);
+    const isFriend = currentUser?.friends?.includes(friendId) || false;
+
+    const profileTemplate = document.getElementById("friend-profile-template");
+    const node = profileTemplate.content.cloneNode(true);
+
+    node.querySelector(".js-days").textContent = days;
+    node.querySelector(".js-days-text").textContent = daysText;
+    node.querySelector(".js-avatar").textContent = initials;
+    node.querySelector(".js-name").textContent = friend.name;
+    node.querySelector(".js-date").textContent = dateStr;
+
+    const groupsContainer = node.querySelector(".js-groups");
+    (friend.groups || []).forEach(g => {
+        const chip = document.createElement("span");
+        chip.className = "chip";
+        chip.textContent = g;
+        groupsContainer.appendChild(chip);
+    });
+
+    const toggleBtn = node.querySelector(".js-friend-toggle-btn");
+    toggleBtn.classList.add(isFriend ? "btn-secondary" : "btn-primary");
+    toggleBtn.querySelector(".js-friend-toggle-text").textContent = isFriend ? "✕ Удалить из друзей" : "Добавить в друзья";
+    toggleBtn.addEventListener("click", () => window.toggleFriend(friendId));
+
+    const calendarBtn = node.querySelector(".js-calendar-btn");
+    calendarBtn.hidden = !isFriend;
+    calendarBtn.addEventListener("click", () => {
+        if (window.addToGoogleCalendar) {
+            window.addToGoogleCalendar(friendId);
+        } else {
+            console.error("Функция addToGoogleCalendar не найдена");
+        }
+    });
+
+    const wishlistContainer = node.querySelector(".js-wishlist");
+    const gifts = friend.gifts || [];
+    if (gifts.length === 0) {
+        const emptyText = document.createElement("p");
+        emptyText.className = "field-hint";
+        emptyText.textContent = "Список подарков пока пуст";
+        wishlistContainer.appendChild(emptyText);
+    } else {
+        const itemTemplate = document.getElementById("wishlist-item-template");
+        gifts.forEach(giftName => {
+            const itemNode = itemTemplate.content.cloneNode(true);
+            itemNode.querySelector(".js-title").textContent = giftName;
+            wishlistContainer.appendChild(itemNode);
+        });
+    }
+
+    friendProfileContainer.appendChild(node);
+    if (window.lucide) window.lucide.createIcons();
+    document.title = `${friend.name} — BdayHub`;
 }
 
 window.toggleFriend = async function(userId) {
@@ -400,103 +427,18 @@ watchAuthState((authUser) => {
             window.dispatchEvent(new CustomEvent("currentUser-ready"));
             renderMyProfile();
             renderFriends();
-            renderGroupFilters();
+            renderGroupFilters(allGroups);
             window.dispatchEvent(new CustomEvent("user-data-updated"));
         }
 
-        const friendProfileContainer = document.getElementById("friend-profile-content");
-        if (friendProfileContainer) {
-            const params = new URLSearchParams(location.search);
-            const friendId = params.get("id");
-            const friend = allUsers.find(u => u.id === friendId);
-
-            if (friend) {
-                const days = getDaysToBirthday(friend.birthday);
-                const daysText = formatDaysText(days);
-                const initials = getInitials(friend.name);
-                const dateStr = formatBirthDate(friend.birthday, true);
-                const groupsHtml = (friend.groups || []).map(g => `<span class="chip">${escapeHtml(g)}</span>`).join("");
-                const isFriend = currentUser?.friends?.includes(friendId) || false;
-
-                const wishlistHtml = (friend.gifts || []).map(giftName => `
-                    <div class="wishlist-item">
-                        <div class="wishlist-item__icon">
-                            <i data-lucide="gift" style="width:18px;"></i>
-                        </div>
-                        <span class="wishlist-item__title">${escapeHtml(giftName)}</span>
-                    </div>
-                `).join("");
-
-                friendProfileContainer.innerHTML = `
-                    <section class="profile-hero">
-                        <div class="profile-hero__banner">
-                            <div class="profile-hero__countdown">
-                                <div class="profile-hero__countdown-number">${days}</div>
-                                <div class="profile-hero__countdown-label">${daysText} до ДР</div>
-                            </div>
-                        </div>
-                        <div class="profile-hero__body">
-                            <div class="profile-hero__avatar">${initials}</div>
-                            <div class="profile-hero__info">
-                                <h1 class="profile-hero__name">${escapeHtml(friend.name)}</h1>
-                                <div class="profile-hero__meta">
-                                    <span><i data-lucide="calendar" style="width:16px; vertical-align:middle;"></i> ${dateStr}</span>
-                                </div>
-                                <div class="profile-hero__groups">${groupsHtml}</div>
-                                <div style="margin-top:12px; display:flex; gap:8px; flex-wrap:wrap;">
-                                    <button class="btn ${isFriend ? 'btn-secondary' : 'btn-primary'}" id="friendToggleBtn" data-friend-id="${friendId}">
-                                        ${isFriend ? '✕ Удалить из друзей' : 'Добавить в друзья'}
-                                    </button>
-                                    ${isFriend ? `
-                                        <button class="btn btn-secondary" id="calendarBtn" data-friend-id="${friendId}" style="display:inline-flex; align-items:center; gap:4px;">
-                                            <i data-lucide="calendar" style="width:14px; height:14px;"></i>
-                                            В календарь
-                                        </button>
-                                    ` : ''}
-                                </div>
-                            </div>
-                        </div>
-                    </section>
-                    <section>
-                        <h2 class="section-title">Список подарков</h2>
-                        <div class="wishlist">
-                            ${wishlistHtml || '<p class="field-hint">Список подарков пока пуст</p>'}
-                        </div>
-                    </section>
-                `;
-
-                const toggleBtn = document.getElementById('friendToggleBtn');
-                if (toggleBtn) {
-                    toggleBtn.addEventListener('click', async () => {
-                        const friendId = toggleBtn.dataset.friendId;
-                        await window.toggleFriend(friendId);
-                    });
-                }
-
-                const calendarBtn = document.getElementById('calendarBtn');
-                if (calendarBtn) {
-                    calendarBtn.addEventListener('click', () => {
-                        if (window.addToGoogleCalendar) {
-                            window.addToGoogleCalendar(friendId);
-                        } else {
-                            console.error('Функция addToGoogleCalendar не найдена');
-                        }
-                    });
-                }
-
-                if (window.lucide) window.lucide.createIcons();
-                document.title = `${friend.name} — BdayHub`;
-            } else {
-                friendProfileContainer.innerHTML = `<p class="page-title">Пользователь не найден</p>`;
-            }
-        }
+        renderFriendProfile();
     });
 
     groupsUnsubscribe = onSnapshot(groupsCol, (snapshot) => {
         allGroups = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
         if (currentUser) {
             renderMyGroups();
-            renderGroupFilters();
+            renderGroupFilters(allGroups);
         }
     });
 });
