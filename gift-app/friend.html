@@ -8,6 +8,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400..700&family=Manrope:wght@400;600;700;800&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
 
+    <script type="module" src="https://unpkg.com/emoji-picker-element@^1/index.js"></script>
+
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/profiles.css">
     <link rel="stylesheet" href="css/chat.css">
@@ -69,7 +71,7 @@
 
             <div class="chat-composer">
                 <form class="chat-form" id="js-chat-form" autocomplete="off">
-                    <button type="button" class="chat-icon-btn" title="Эмодзи">
+                    <button type="button" class="chat-icon-btn" id="js-emoji-btn" title="Эмодзи">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <circle cx="12" cy="12" r="10"/>
                             <path d="M8 14s1.5 2 4 2 4-2 4-2"/>
@@ -85,12 +87,14 @@
                         </svg>
                     </button>
                 </form>
+                <emoji-picker id="js-emoji-picker" class="emoji-popup" style="display:none"></emoji-picker>
             </div>
         </aside>
     </div>
 </main>
 
 <script type="module" src="js/profiles.js"></script>
+<script type="module" src="js/notifications.js"></script>
 
 <script type="module">
     import { db } from "./js/config.js";
@@ -128,6 +132,47 @@
 
     document.getElementById("js-pinned-close")?.addEventListener("click", () => {
         document.getElementById("js-pinned").style.display = "none";
+    });
+
+    const emojiBtn = document.getElementById("js-emoji-btn");
+    const emojiPicker = document.getElementById("js-emoji-picker");
+    const chatInput = document.getElementById("js-chat-input");
+
+    function closeEmojiPicker() {
+        emojiPicker.style.display = "none";
+    }
+
+    function toggleEmojiPicker() {
+        emojiPicker.style.display = (emojiPicker.style.display === "none") ? "block" : "none";
+    }
+
+    emojiBtn?.addEventListener("click", (e) => {
+        e.stopPropagation();
+        toggleEmojiPicker();
+    });
+
+    emojiPicker?.addEventListener("emoji-click", (event) => {
+        const emoji = event.detail.unicode;
+        const start = chatInput.selectionStart ?? chatInput.value.length;
+        const end = chatInput.selectionEnd ?? chatInput.value.length;
+        chatInput.value = chatInput.value.slice(0, start) + emoji + chatInput.value.slice(end);
+        const cursor = start + emoji.length;
+        chatInput.focus();
+        chatInput.setSelectionRange(cursor, cursor);
+        closeEmojiPicker();
+    });
+
+    document.addEventListener("click", (e) => {
+        if (emojiPicker.style.display !== "none" &&
+            !emojiPicker.contains(e.target) &&
+            e.target !== emojiBtn &&
+            !emojiBtn.contains(e.target)) {
+            closeEmojiPicker();
+        }
+    });
+
+    document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") closeEmojiPicker();
     });
 </script>
 </body>

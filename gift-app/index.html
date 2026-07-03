@@ -27,11 +27,52 @@
 </header>
 
 <main class="page-container">
-    <h1 class="page-title">Друзья</h1>
+    <div id="notification-zone" style="margin-bottom: var(--space-xl);"></div>
+
+    <div class="filter-bar">
+        <button class="filter-btn is-active" data-filter="all">Все пользователи</button>
+        <button class="filter-btn" data-filter="friends">Друзья</button>
+    </div>
 
     <div class="friends-grid" id="friends-container"></div>
 </main>
 
+<script type="module">
+    import { db } from "./js/config.js";
+    import { collection, onSnapshot, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { watchAuthState } from "./js/auth.js";
+
+    window.db = db;
+
+    let currentUserId = null;
+    let allUsers = [];
+
+    watchAuthState((user) => {
+        if (!user) {
+            window.location.href = "login.html";
+            return;
+        }
+        currentUserId = user.uid;
+        window.currentUserId = user.uid;
+    });
+
+    onSnapshot(collection(db, "users"), (snapshot) => {
+        allUsers = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+        window.allUsers = allUsers;
+    });
+
+    window.arrayUnion = function(...items) {
+        return items;
+    };
+    window.arrayRemove = function(item) {
+        return item;
+    };
+
+    document.addEventListener('user-data-updated', () => {});
+</script>
+
 <script type="module" src="js/profiles.js"></script>
+<script type="module" src="js/notifications.js"></script>
+
 </body>
 </html>

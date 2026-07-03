@@ -12,6 +12,23 @@ import {
     arrayRemove
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
+const USER_PALETTE = [
+    { bg: "var(--color-navy)",  text: "var(--color-surface)" },
+    { bg: "var(--color-rose)",  text: "var(--color-surface)" },
+    { bg: "var(--color-coral)", text: "var(--color-surface)" },
+    { bg: "var(--color-peach)", text: "var(--color-navy)" },
+    { bg: "var(--color-gold)",  text: "var(--color-navy)" },
+];
+
+function paletteForSender(name) {
+    let hash = 0;
+    for (let i = 0; i < name.length; i++) {
+        hash = (hash << 5) - hash + name.charCodeAt(i);
+        hash |= 0;
+    }
+    return USER_PALETTE[Math.abs(hash) % USER_PALETTE.length];
+}
+
 export function initChatInterface(chatId, formId, inputId, messagesId, currentUserName) {
     const form = document.getElementById(formId);
     const input = document.getElementById(inputId);
@@ -54,6 +71,11 @@ export function initChatInterface(chatId, formId, inputId, messagesId, currentUs
 
             const isOwn = data.sender === currentUserName;
             msgElement.className = `msg ${isOwn ? "msg--own" : "msg--other"}`;
+            if (!isOwn) {
+                const palette = paletteForSender(data.sender);
+                msgElement.style.setProperty("--msg-color", palette.bg);
+                msgElement.style.setProperty("--msg-text-color", palette.text);
+            }
 
             let timeStr = "⏳";
             if (data.timestamp) {
