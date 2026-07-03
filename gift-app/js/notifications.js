@@ -20,8 +20,6 @@ function loadDataFromFirebase() {
                 gifts: data.gifts || []
             });
         });
-
-        console.log("Данные обновлены из Firebase:", mockDatabase);
         syncSubscriptionsWithFriends();
         checkBirthdays();
     });
@@ -128,7 +126,6 @@ function subscribeToGroup(groupName) {
 function checkBirthdays() {
     let currentSubscriptions = JSON.parse(localStorage.getItem('mySubscriptions')) || [];
     let notifyZone = document.getElementById('notification-zone');
-    if (!notifyZone) return;
     notifyZone.innerHTML = '';
 
     const today = new Date();
@@ -150,7 +147,7 @@ function checkBirthdays() {
         const diffTime = bdayThisYear - today;
         const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
-        if (diffDays === 0 || diffDays === 365) {
+        if (diffDays === 0) {
             renderNotification(friend.name, "Праздник прямо сегодня! 🥳", "red");
             found = true;
         } else if (diffDays <= 7) {
