@@ -1,5 +1,6 @@
 import { db } from "./config.js";
 import { collection, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { watchAuthState, logout } from "./auth.js";
 
 function getDaysToBirthday(dateString) {
     if (!dateString) return 0;
@@ -39,14 +40,33 @@ function formatBirthDate(dateString) {
 
 const usersCol = collection(db, "users");
 
-onSnapshot(usersCol, (snapshot) => {
-    const users = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+document.getElementById('logoutBtn')?.addEventListener('click', async () => {
+    await logout();
+    window.location.href = "login.html";
+});
 
-    const currentUser = users[0] || { name: "Гость", groups: [], gifts: [] };
-    window.currentUser = currentUser;
-    window.dispatchEvent(new Event("currentUser-ready")); // Уведомляем другие скрипты о загрузке юзера
+// Все страницы, подключающие profiles.js, требуют входа — без сессии
+// сразу уводим на страницу логина и дальше ничего не грузим.
+let usersUnsubscribe = null;
 
-    const friendsContainer = document.getElementById("friends-container");
+watchAuthState((authUser) => {
+    if (!authUser) {
+        window.location.href = "login.html";
+        return;
+    }
+    if (usersUnsubscribe) return; // сессия уже подтверждена, повторно не подписываемся
+
+    usersUnsubscribe = onSnapshot(usersCol, (snapshot) => {
+        const users = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+
+        // Текущий пользователь — тот, кто реально вошёл (по uid из Firebase Auth),
+        // а не первая запись в базе.
+        const currentUser = users.find(u => u.id === authUser.uid)
+            || { name: authUser.email, groups: [], gifts: [] };
+        window.currentUser = currentUser;
+        window.dispatchEvent(new Event("currentUser-ready")); // Уведомляем другие скрипты о загрузке юзера
+
+        const friendsContainer = document.getElementById("friends-container");
     if (friendsContainer) {
         friendsContainer.innerHTML = "";
 
@@ -173,4 +193,5 @@ onSnapshot(usersCol, (snapshot) => {
         }
         if (window.lucide) window.lucide.createIcons();
     }
+    });
 });
