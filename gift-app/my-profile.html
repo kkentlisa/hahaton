@@ -1,16 +1,57 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
+    <meta charset="UTF-8">
+    <title>BdayHub</title>
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400..700&family=Manrope:wght@400;600;700;800&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
 
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/profiles.css">
-    <meta charset="UTF-8">
-    <title>Title</title>
 </head>
 <body>
 
+<header class="site-header">
+    <div class="site-header__logo">
+        <span class="site-header__logo-badge">
+            <i data-lucide="party-popper" style="width:18px;"></i>
+        </span>
+        BdayHub
+    </div>
+    <a href="index.html" class="btn btn-ghost">
+        <i data-lucide="arrow-left" style="width:16px;"></i>
+        Все друзья
+    </a>
+</header>
+
+<main class="page-container">
+    <div id="my-hero-container"></div>
+
+    <section class="groups-section">
+        <div class="section-header">
+            <h2>Мои группы</h2>
+            <button class="btn btn-primary" id="btn-create-group">
+                <i data-lucide="plus" style="width:16px; vertical-align:middle;"></i>
+                Создать группу
+            </button>
+        </div>
+        <div class="groups-grid" id="my-groups-container"></div>
+    </section>
+
+    <section>
+        <div class="section-header">
+            <h2>Мой список подарков</h2>
+            <button class="btn btn-primary" id="btn-add-gift">
+                <i data-lucide="plus" style="width:16px; vertical-align:middle;"></i>
+                Добавить подарок
+            </button>
+        </div>
+        <div class="wishlist" id="my-wishlist-container"></div>
+    </section>
+</main>
+
+<script type="module" src="js/profiles.js"></script>
 </body>
 </html>
