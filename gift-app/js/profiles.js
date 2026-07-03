@@ -66,6 +66,41 @@ document.getElementById('logoutBtn')?.addEventListener('click', async () => {
     window.location.href = "login.html";
 });
 
+async function updateGroupFriends() {
+    if (!currentUserId || !currentUser) return;
+
+    const userGroups = currentUser.groups || [];
+    const allGroupUsers = new Set();
+
+    for (const groupName of userGroups) {
+        allUsers.forEach(u => {
+            if (u.id !== currentUserId && (u.groups || []).includes(groupName)) {
+                allGroupUsers.add(u.id);
+            }
+        });
+    }
+
+    const currentFriends = new Set(currentUser.friends || []);
+    const toAdd = [...allGroupUsers].filter(id => !currentFriends.has(id));
+    const toRemove = [...currentFriends].filter(id => {
+        const user = allUsers.find(u => u.id === id);
+        if (!user) return true;
+        return !allGroupUsers.has(id);
+    });
+
+    for (const id of toAdd) {
+        await updateDoc(doc(db, "users", currentUserId), {
+            friends: arrayUnion(id)
+        });
+    }
+
+    for (const id of toRemove) {
+        await updateDoc(doc(db, "users", currentUserId), {
+            friends: arrayRemove(id)
+        });
+    }
+}
+
 function renderMyProfile() {
     if (!currentUser) return;
 
@@ -135,6 +170,7 @@ function renderMyGroups() {
             await updateDoc(doc(db, "users", currentUserId), {
                 groups: arrayUnion(groupName)
             });
+            await updateGroupFriends();
         });
     });
 
@@ -144,6 +180,7 @@ function renderMyGroups() {
             await updateDoc(doc(db, "users", currentUserId), {
                 groups: arrayRemove(groupName)
             });
+            await updateGroupFriends();
         });
     });
 
@@ -289,6 +326,20 @@ function initFilters() {
     });
 }
 
+window.toggleFriend = async function(userId) {
+    if (!currentUserId || !currentUser) return;
+    const isFriend = (currentUser.friends || []).includes(userId);
+    if (isFriend) {
+        await updateDoc(doc(db, "users", currentUserId), {
+            friends: arrayRemove(userId)
+        });
+    } else {
+        await updateDoc(doc(db, "users", currentUserId), {
+            friends: arrayUnion(userId)
+        });
+    }
+};
+
 watchAuthState((authUser) => {
     if (!authUser) {
         window.location.href = "login.html";
@@ -304,9 +355,12 @@ watchAuthState((authUser) => {
         const userData = allUsers.find(u => u.id === authUser.uid);
         if (userData) {
             currentUser = userData;
+            window.currentUser = userData;
+            window.dispatchEvent(new CustomEvent("currentUser-ready"));
             renderMyProfile();
             renderFriends();
             initFilters();
+            window.dispatchEvent(new CustomEvent("user-data-updated"));
         }
 
         const friendProfileContainer = document.getElementById("friend-profile-content");
@@ -368,17 +422,7 @@ watchAuthState((authUser) => {
                 if (toggleBtn) {
                     toggleBtn.addEventListener('click', async () => {
                         const friendId = toggleBtn.dataset.friendId;
-                        const isCurrentlyFriend = currentUser?.friends?.includes(friendId) || false;
-
-                        if (isCurrentlyFriend) {
-                            await updateDoc(doc(db, "users", currentUserId), {
-                                friends: arrayRemove(friendId)
-                            });
-                        } else {
-                            await updateDoc(doc(db, "users", currentUserId), {
-                                friends: arrayUnion(friendId)
-                            });
-                        }
+                        await window.toggleFriend(friendId);
                     });
                 }
 

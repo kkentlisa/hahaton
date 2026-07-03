@@ -1,14 +1,16 @@
 ﻿import { db } from './config.js';
-import { collection, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { collection, onSnapshot, doc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { watchAuthState } from './auth.js';
 
 let mockDatabase = [];
+let currentUserFriends = [];
+let currentUserId = null;
 
-async function loadDataFromFirebase() {
-    try {
-        const querySnapshot = await getDocs(collection(db, "users"));
+function loadDataFromFirebase() {
+    onSnapshot(collection(db, "users"), (snapshot) => {
         mockDatabase = [];
 
-        querySnapshot.forEach((doc) => {
+        snapshot.forEach((doc) => {
             const data = doc.data();
             mockDatabase.push({
                 id: doc.id,
@@ -19,14 +21,43 @@ async function loadDataFromFirebase() {
             });
         });
 
-        console.log("Данные успешно загружены из Firebase:", mockDatabase);
-
-        syncAllButtons();
+        console.log("Данные обновлены из Firebase:", mockDatabase);
+        syncSubscriptionsWithFriends();
         checkBirthdays();
+    });
 
-    } catch (error) {
-        console.error("Ошибка загрузки из Firebase: ", error);
+    watchAuthState((user) => {
+        if (user) {
+            currentUserId = user.uid;
+            onSnapshot(doc(db, "users", user.uid), (doc) => {
+                if (doc.exists()) {
+                    const data = doc.data();
+                    currentUserFriends = data.friends || [];
+                    syncSubscriptionsWithFriends();
+                    checkBirthdays();
+                }
+            });
+        }
+    });
+}
+
+function syncSubscriptionsWithFriends() {
+    if (currentUserFriends.length === 0) {
+        localStorage.setItem('mySubscriptions', JSON.stringify([]));
+        return;
     }
+
+    const currentSubscriptions = JSON.parse(localStorage.getItem('mySubscriptions')) || [];
+    const newSubscriptions = [];
+
+    currentUserFriends.forEach(friendId => {
+        if (!newSubscriptions.includes(friendId)) {
+            newSubscriptions.push(friendId);
+        }
+    });
+
+    localStorage.setItem('mySubscriptions', JSON.stringify(newSubscriptions));
+    syncAllButtons();
 }
 
 function toggleCardButtons(friendId, isSubscribed) {
@@ -91,9 +122,6 @@ function subscribeToGroup(groupName) {
         localStorage.setItem('mySubscriptions', JSON.stringify(currentSubscriptions));
         syncAllButtons();
         checkBirthdays();
-        alert(`Подписка оформлена! Добавлено человек: ${addedCount}`);
-    } else {
-        alert(`Все участники группы уже добавлены!`);
     }
 }
 
@@ -105,6 +133,8 @@ function checkBirthdays() {
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
+
+    let found = false;
 
     currentSubscriptions.forEach(id => {
         let friend = mockDatabase.find(user => user.id === id);
@@ -122,12 +152,23 @@ function checkBirthdays() {
 
         if (diffDays === 0 || diffDays === 365) {
             renderNotification(friend.name, "Праздник прямо сегодня! 🥳", "red");
+            found = true;
         } else if (diffDays <= 7) {
             renderNotification(friend.name, `День рождения всего через ${diffDays} дн.! ⏳`, "orange");
+            found = true;
         } else if (diffDays > 7 && diffDays <= 14) {
             renderNotification(friend.name, `День рождения всего через ${diffDays} дн.! ⏳`, "yellow");
+            found = true;
         }
     });
+
+    if (!found && currentSubscriptions.length > 0) {
+        notifyZone.innerHTML = `
+            <div style="background-color: #e8f5e9; border-left: 5px solid #66bb6a; padding: 12px; margin-bottom: 10px; border-radius: 4px; color: #2e7d32;">
+                🎯 У ваших друзей нет ближайших дней рождения
+            </div>
+        `;
+    }
 }
 
 function renderNotification(name, message, color) {
@@ -185,3 +226,5 @@ window.subscribeToGroup = subscribeToGroup;
 window.addToGoogleCalendar = addToGoogleCalendar;
 
 loadDataFromFirebase();
+
+setInterval(checkBirthdays, 15000);
