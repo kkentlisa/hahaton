@@ -402,10 +402,16 @@ watchAuthState((authUser) => {
                                     <span><i data-lucide="calendar" style="width:16px; vertical-align:middle;"></i> ${dateStr}</span>
                                 </div>
                                 <div class="profile-hero__groups">${groupsHtml}</div>
-                                <div style="margin-top:12px;">
+                                <div style="margin-top:12px; display:flex; gap:8px; flex-wrap:wrap;">
                                     <button class="btn ${isFriend ? 'btn-secondary' : 'btn-primary'}" id="friendToggleBtn" data-friend-id="${friendId}">
                                         ${isFriend ? '✕ Удалить из друзей' : 'Добавить в друзья'}
                                     </button>
+                                    ${isFriend ? `
+                                        <button class="btn btn-secondary" id="calendarBtn" data-friend-id="${friendId}" style="display:inline-flex; align-items:center; gap:4px;">
+                                            <i data-lucide="calendar" style="width:14px; height:14px;"></i>
+                                            В календарь
+                                        </button>
+                                    ` : ''}
                                 </div>
                             </div>
                         </div>
@@ -423,6 +429,17 @@ watchAuthState((authUser) => {
                     toggleBtn.addEventListener('click', async () => {
                         const friendId = toggleBtn.dataset.friendId;
                         await window.toggleFriend(friendId);
+                    });
+                }
+
+                const calendarBtn = document.getElementById('calendarBtn');
+                if (calendarBtn) {
+                    calendarBtn.addEventListener('click', () => {
+                        if (window.addToGoogleCalendar) {
+                            window.addToGoogleCalendar(friendId);
+                        } else {
+                            console.error('Функция addToGoogleCalendar не найдена');
+                        }
                     });
                 }
 
