@@ -55,6 +55,7 @@ export async function registerUser({ username, password, name, birthday, groups,
         birthday,
         groups: groups || [],
         gifts: gifts || [],
+        friends: [],
     });
 
     return credential.user;

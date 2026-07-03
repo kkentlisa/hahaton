@@ -40,6 +40,7 @@
                     <th>Дата рождения</th>
                     <th>Группы</th>
                     <th>Подарки</th>
+                    <th>Подписки</th>
                     <th>Действия</th>
                 </tr>
                 </thead>
@@ -89,6 +90,10 @@
                 <span class="field__label">Желаемые подарки (по одному в строке)</span>
                 <textarea id="userGifts"></textarea>
             </label>
+            <div class="field">
+                <span class="field__label">Подписан на</span>
+                <div id="userFriendCheckboxes" class="chip-toggles"></div>
+            </div>
             <div class="modal__footer">
                 <button type="button" onclick="window.closeUserModal()" class="btn btn-secondary">Отмена</button>
                 <button type="submit" class="btn btn-primary">Сохранить</button>
