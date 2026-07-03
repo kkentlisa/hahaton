@@ -1,30 +1,7 @@
-.friend-body {
-    margin: 0;
-    padding: 0;
-    height: 100vh;
-    overflow: hidden;
-}
-
-.friend-page {
-    height: 100vh;
-    overflow: hidden;
-}
-
-.chat-wrap-outer {
-    background: var(--color-bg);
-    padding: var(--space-lg);
-    display: flex;
-    flex-direction: column;
-    height: 100vh;
-    overflow: hidden;
-    box-sizing: border-box;
-}
-
 .chat-wrap {
     display: flex;
     flex-direction: column;
-    flex: 1;
-    min-height: 0;
+    height: 600px;
     background: var(--color-surface);
     border-radius: var(--radius-md);
     box-shadow: var(--shadow-sm);
