@@ -1,0 +1,184 @@
+.auth-page {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-xl) var(--space-lg);
+}
+
+.auth-shell {
+    width: 100%;
+    max-width: 460px;
+}
+
+.auth-logo {
+    text-align: center;
+    font-size: var(--font-size-xl);
+    font-weight: 800;
+    margin-bottom: var(--space-lg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-sm);
+}
+
+.auth-card {
+    background: var(--color-surface);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-md);
+    padding: var(--space-xl);
+}
+
+
+.auth-role-switch {
+    display: flex;
+    background: var(--color-bg);
+    border-radius: var(--radius-full);
+    padding: var(--space-xs);
+    margin-bottom: var(--space-lg);
+}
+
+.auth-role-switch button {
+    flex: 1;
+    background: transparent;
+    padding: var(--space-sm) var(--space-md);
+    border-radius: var(--radius-full);
+    font-weight: 700;
+    font-size: var(--font-size-sm);
+    color: var(--color-text-secondary);
+    transition: all 0.2s ease;
+}
+
+.auth-role-switch button.is-active {
+    background: var(--color-accent);
+    color: white;
+    box-shadow: var(--shadow-sm);
+}
+
+
+.auth-mode-switch {
+    display: flex;
+    gap: var(--space-lg);
+    border-bottom: 1px solid var(--color-border);
+    margin-bottom: var(--space-lg);
+}
+
+.auth-mode-switch button {
+    background: transparent;
+    padding: var(--space-sm) 0;
+    font-weight: 700;
+    color: var(--color-text-secondary);
+    border-bottom: 3px solid transparent;
+    transform: translateY(1px);
+}
+
+.auth-mode-switch button.is-active {
+    color: var(--color-accent-hover);
+    border-bottom-color: var(--color-accent);
+}
+
+.auth-mode-switch.is-single button {
+    cursor: default;
+}
+
+
+.auth-form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+}
+
+.auth-field {
+    display: block;
+}
+
+.auth-field__label {
+    display: block;
+    font-size: var(--font-size-sm);
+    font-weight: 700;
+    color: var(--color-text-secondary);
+    margin-bottom: var(--space-xs);
+}
+
+.auth-field input,
+.auth-field textarea {
+    width: 100%;
+    padding: var(--space-sm) var(--space-md);
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--color-border);
+    background: var(--color-bg);
+    font-family: inherit;
+    font-size: var(--font-size-base);
+}
+
+.auth-field input:focus,
+.auth-field textarea:focus {
+    outline: none;
+    border-color: var(--color-accent);
+}
+
+.auth-field textarea {
+    min-height: 70px;
+    resize: vertical;
+}
+
+.auth-hint {
+    color: var(--color-text-secondary);
+    font-size: var(--font-size-sm);
+    margin-top: calc(var(--space-xs) * -1);
+}
+
+.auth-chip-toggles {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-xs);
+}
+
+.auth-chip-toggles .chip-toggle {
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    color: var(--color-text-secondary);
+    padding: var(--space-xs) var(--space-md);
+    border-radius: var(--radius-full);
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    transition: all 0.15s ease;
+}
+
+.auth-chip-toggles .chip-toggle:hover {
+    border-color: var(--color-accent);
+}
+
+.auth-chip-toggles .chip-toggle.is-selected {
+    background: var(--color-accent);
+    border-color: var(--color-accent);
+    color: white;
+}
+
+.auth-submit {
+    width: 100%;
+    padding: var(--space-sm) var(--space-lg);
+    margin-top: var(--space-xs);
+    font-size: var(--font-size-base);
+}
+
+.auth-error {
+    background: rgba(219, 120, 145, 0.12);
+    color: var(--color-rose);
+    padding: var(--space-sm) var(--space-md);
+    border-radius: var(--radius-sm);
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    display: none;
+}
+
+.auth-error.is-visible {
+    display: block;
+}
+
+.auth-note {
+    text-align: center;
+    color: var(--color-text-secondary);
+    font-size: var(--font-size-sm);
+    margin-top: var(--space-lg);
+}
