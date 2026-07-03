@@ -236,6 +236,7 @@ watchAuthState((authUser) => {
         const friendsContainer = document.getElementById("friends-container");
         if (friendsContainer) {
             friendsContainer.innerHTML = "";
+            const currentUserFriends = currentUser?.friends || [];
             allUsers.forEach(user => {
                 if (user.id === authUser.uid) return;
                 const days = getDaysToBirthday(user.birthday);
@@ -244,6 +245,7 @@ watchAuthState((authUser) => {
                 const dateStr = formatBirthDate(user.birthday);
                 const groupsHtml = (user.groups || []).map(g => `<span class="chip">${escapeHtml(g)}</span>`).join("");
                 const giftsCount = user.gifts ? user.gifts.length : 0;
+                const isFriend = currentUserFriends.includes(user.id);
 
                 const card = document.createElement("a");
                 card.href = `friend.html?id=${user.id}`;
@@ -254,6 +256,7 @@ watchAuthState((authUser) => {
                             <strong>${days}</strong>
                             <span>${daysText}</span>
                         </span>
+                        ${isFriend ? '<span class="friend-badge">👥 В друзьях</span>' : ''}
                     </div>
                     <div class="friend-card__avatar">${initials}</div>
                     <div class="friend-card__body">
@@ -283,6 +286,7 @@ watchAuthState((authUser) => {
                 const initials = getInitials(friend.name);
                 const dateStr = formatBirthDate(friend.birthday, true);
                 const groupsHtml = (friend.groups || []).map(g => `<span class="chip">${escapeHtml(g)}</span>`).join("");
+                const isFriend = currentUser?.friends?.includes(friendId) || false;
 
                 const wishlistHtml = (friend.gifts || []).map(giftName => `
                     <div class="wishlist-item">
@@ -309,6 +313,11 @@ watchAuthState((authUser) => {
                                     <span><i data-lucide="calendar" style="width:16px; vertical-align:middle;"></i> ${dateStr}</span>
                                 </div>
                                 <div class="profile-hero__groups">${groupsHtml}</div>
+                                <div style="margin-top:12px;">
+                                    <button class="btn ${isFriend ? 'btn-secondary' : 'btn-primary'}" id="friendToggleBtn" data-friend-id="${friendId}">
+                                        ${isFriend ? '✕ Удалить из друзей' : 'Добавить в друзья'}
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </section>
@@ -319,6 +328,25 @@ watchAuthState((authUser) => {
                         </div>
                     </section>
                 `;
+
+                const toggleBtn = document.getElementById('friendToggleBtn');
+                if (toggleBtn) {
+                    toggleBtn.addEventListener('click', async () => {
+                        const friendId = toggleBtn.dataset.friendId;
+                        const isCurrentlyFriend = currentUser?.friends?.includes(friendId) || false;
+
+                        if (isCurrentlyFriend) {
+                            await updateDoc(doc(db, "users", currentUserId), {
+                                friends: arrayRemove(friendId)
+                            });
+                        } else {
+                            await updateDoc(doc(db, "users", currentUserId), {
+                                friends: arrayUnion(friendId)
+                            });
+                        }
+                    });
+                }
+
                 if (window.lucide) window.lucide.createIcons();
                 document.title = `${friend.name} — BdayHub`;
             } else {
