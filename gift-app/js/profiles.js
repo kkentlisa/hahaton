@@ -59,6 +59,7 @@ let currentUser = null;
 let currentUserId = null;
 let usersUnsubscribe = null;
 let groupsUnsubscribe = null;
+let currentFilter = 'all';
 
 document.getElementById('logoutBtn')?.addEventListener('click', async () => {
     await logout();
@@ -215,6 +216,79 @@ function renderMyWishlist() {
     if (window.lucide) window.lucide.createIcons();
 }
 
+function renderFriends() {
+    const friendsContainer = document.getElementById("friends-container");
+    if (!friendsContainer) return;
+
+    const currentUserFriends = currentUser?.friends || [];
+    let filteredUsers = [];
+
+    if (currentFilter === 'friends') {
+        filteredUsers = allUsers.filter(user =>
+            user.id !== currentUserId && currentUserFriends.includes(user.id)
+        );
+    } else {
+        filteredUsers = allUsers.filter(user => user.id !== currentUserId);
+    }
+
+    if (filteredUsers.length === 0) {
+        friendsContainer.innerHTML = `
+            <div class="empty-state">
+                <p class="empty-state__text">${currentFilter === 'friends' ? 'У вас пока нет друзей' : 'Пользователей пока нет'}</p>
+            </div>
+        `;
+        return;
+    }
+
+    friendsContainer.innerHTML = "";
+    filteredUsers.forEach(user => {
+        const days = getDaysToBirthday(user.birthday);
+        const daysText = formatDaysText(days);
+        const initials = getInitials(user.name);
+        const dateStr = formatBirthDate(user.birthday);
+        const groupsHtml = (user.groups || []).map(g => `<span class="chip">${escapeHtml(g)}</span>`).join("");
+        const giftsCount = user.gifts ? user.gifts.length : 0;
+        const isFriend = currentUserFriends.includes(user.id);
+
+        const card = document.createElement("a");
+        card.href = `friend.html?id=${user.id}`;
+        card.className = "friend-card";
+        card.innerHTML = `
+            <div class="friend-card__banner">
+                <span class="friend-card__banner-countdown">
+                    <strong>${days}</strong>
+                    <span>${daysText}</span>
+                </span>
+                ${isFriend ? '<span class="friend-badge">👥 В друзьях</span>' : ''}
+            </div>
+            <div class="friend-card__avatar">${initials}</div>
+            <div class="friend-card__body">
+                <div class="friend-card__name">${escapeHtml(user.name)}</div>
+                <div class="friend-card__date">${dateStr}</div>
+                <div class="friend-card__groups">${groupsHtml}</div>
+                <div class="wishlist-count">
+                    <i data-lucide="gift" style="width:14px;"></i>
+                    ${giftsCount} ${giftsCount === 1 ? 'подарок' : giftsCount > 1 && giftsCount < 5 ? 'подарка' : 'подарков'}
+                </div>
+            </div>
+        `;
+        friendsContainer.appendChild(card);
+    });
+    if (window.lucide) window.lucide.createIcons();
+}
+
+function initFilters() {
+    const filterBtns = document.querySelectorAll('.filter-btn');
+    filterBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            filterBtns.forEach(b => b.classList.remove('is-active'));
+            btn.classList.add('is-active');
+            currentFilter = btn.dataset.filter;
+            renderFriends();
+        });
+    });
+}
+
 watchAuthState((authUser) => {
     if (!authUser) {
         window.location.href = "login.html";
@@ -231,47 +305,8 @@ watchAuthState((authUser) => {
         if (userData) {
             currentUser = userData;
             renderMyProfile();
-        }
-
-        const friendsContainer = document.getElementById("friends-container");
-        if (friendsContainer) {
-            friendsContainer.innerHTML = "";
-            const currentUserFriends = currentUser?.friends || [];
-            allUsers.forEach(user => {
-                if (user.id === authUser.uid) return;
-                const days = getDaysToBirthday(user.birthday);
-                const daysText = formatDaysText(days);
-                const initials = getInitials(user.name);
-                const dateStr = formatBirthDate(user.birthday);
-                const groupsHtml = (user.groups || []).map(g => `<span class="chip">${escapeHtml(g)}</span>`).join("");
-                const giftsCount = user.gifts ? user.gifts.length : 0;
-                const isFriend = currentUserFriends.includes(user.id);
-
-                const card = document.createElement("a");
-                card.href = `friend.html?id=${user.id}`;
-                card.className = "friend-card";
-                card.innerHTML = `
-                    <div class="friend-card__banner">
-                        <span class="friend-card__banner-countdown">
-                            <strong>${days}</strong>
-                            <span>${daysText}</span>
-                        </span>
-                        ${isFriend ? '<span class="friend-badge">👥 В друзьях</span>' : ''}
-                    </div>
-                    <div class="friend-card__avatar">${initials}</div>
-                    <div class="friend-card__body">
-                        <div class="friend-card__name">${escapeHtml(user.name)}</div>
-                        <div class="friend-card__date">${dateStr}</div>
-                        <div class="friend-card__groups">${groupsHtml}</div>
-                        <div class="wishlist-count">
-                            <i data-lucide="gift" style="width:14px;"></i>
-                            ${giftsCount} ${giftsCount === 1 ? 'подарок' : giftsCount > 1 && giftsCount < 5 ? 'подарка' : 'подарков'}
-                        </div>
-                    </div>
-                `;
-                friendsContainer.appendChild(card);
-            });
-            if (window.lucide) window.lucide.createIcons();
+            renderFriends();
+            initFilters();
         }
 
         const friendProfileContainer = document.getElementById("friend-profile-content");
