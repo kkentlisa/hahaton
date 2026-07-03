@@ -6,7 +6,6 @@ import {
     onSnapshot,
     serverTimestamp,
     doc,
-    setDoc,
     updateDoc,
     arrayUnion,
     arrayRemove
@@ -120,17 +119,6 @@ export function initChatInterface(chatId, formId, inputId, messagesId, currentUs
     });
 }
 
-export function initSubscribeButton(friendId, buttonId, currentUserName) {
-    const btn = document.getElementById(buttonId);
-    if (!btn) return;
-
-    const chatRef = doc(window.db, "chats", friendId);
-
-    onSnapshot(chatRef, (snap) => {
-        const participants = snap.exists() ? (snap.data().participants || []) : [];
-        const isSubscribed = participants.includes(currentUserName);
-    });
-}
 
 function escapeHtml(str) {
     if (!str) return "";
@@ -140,4 +128,21 @@ function escapeHtml(str) {
         .replace(/>/g, '&gt;')
         .replace(/"/g, '&quot;')
         .replace(/'/g, '&#39;');
+}
+
+export function initChatOverlay(friendId) {
+    const overlay = document.getElementById("js-chat-overlay");
+    if (!overlay) return;
+
+    function checkAccess() {
+        const friends = window.currentUser?.friends || [];
+        const hasAccess = friends.includes(friendId);
+        overlay.classList.toggle("chat-overlay--hidden", hasAccess);
+    }
+
+    // Проверяем сразу если данные уже есть
+    checkAccess();
+
+    // И при каждом обновлении данных пользователя
+    window.addEventListener("user-data-updated", checkAccess);
 }
