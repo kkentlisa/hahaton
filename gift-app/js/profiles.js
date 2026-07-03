@@ -1,215 +1,176 @@
-document.addEventListener("DOMContentLoaded", () => {
-    function getDaysToBirthday(dateString) {
-        const today = new Date();
-        today.setHours(0,0,0,0);
-        const birthDate = new Date(dateString);
+import { db } from "./config.js";
+import { collection, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-        let nextBday = new Date(today.getFullYear(), birthDate.getMonth(), birthDate.getDate());
-        if (nextBday < today) {
-            nextBday.setFullYear(today.getFullYear() + 1);
-        }
+function getDaysToBirthday(dateString) {
+    if (!dateString) return 0;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const birthDate = new Date(dateString);
 
-        const diffTime = nextBday - today;
-        return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    let nextBday = new Date(today.getFullYear(), birthDate.getMonth(), birthDate.getDate());
+    if (nextBday < today) {
+        nextBday.setFullYear(today.getFullYear() + 1);
     }
 
-    function formatDaysText(days) {
-        const lastDigit = days % 10;
-        const lastTwoDigits = days % 100;
-        if (lastTwoDigits >= 11 && lastTwoDigits <= 19) return "дней";
-        if (lastDigit === 1) return "день";
-        if (lastDigit >= 2 && lastDigit <= 4) return "дня";
-        return "дней";
-    }
+    const diffTime = nextBday - today;
+    return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+}
 
-    function getInitials(name) {
-        return name.split(" ").map(n => n[0]).join("").toUpperCase();
-    }
+function formatDaysText(days) {
+    const lastDigit = days % 10;
+    const lastTwoDigits = days % 100;
+    if (lastTwoDigits >= 11 && lastTwoDigits <= 19) return "дней";
+    if (lastDigit === 1) return "день";
+    if (lastDigit >= 2 && lastDigit <= 4) return "дня";
+    return "дней";
+}
+
+function getInitials(name) {
+    if (!name) return "??";
+    return name.split(" ").map(n => n[0]).join("").toUpperCase();
+}
+
+function formatBirthDate(dateString) {
+    if (!dateString) return "";
+    const months = ["января", "февраля", "марта", "апреля", "мая", "июня", "июля", "августа", "сентября", "октября", "ноября", "декабря"];
+    const d = new Date(dateString);
+    return `${d.getDate()} ${months[d.getMonth()]}`;
+}
+
+const usersCol = collection(db, "users");
+
+onSnapshot(usersCol, (snapshot) => {
+    const users = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+
+    const currentUser = users[0] || { name: "Гость", groups: [], gifts: [] };
+    window.currentUser = currentUser;
+    window.dispatchEvent(new Event("currentUser-ready")); // Уведомляем другие скрипты о загрузке юзера
 
     const friendsContainer = document.getElementById("friends-container");
     if (friendsContainer) {
-        // Рендерим только друзей (исключая текущего пользователя)
-        const friends = mockUsers.filter(u => u.id !== "current_user");
+        friendsContainer.innerHTML = "";
 
-        friends.forEach(user => {
-            const days = getDaysToBirthday(user.birthDate);
+        users.forEach(user => {
+            const days = getDaysToBirthday(user.birthday); // Исправлено на birthday
+            const daysText = formatDaysText(days);
+            const initials = getInitials(user.name);
+            const dateStr = formatBirthDate(user.birthday); // Исправлено на birthday
+            const groupsHtml = (user.groups || []).map(g => `<span class="chip">${g}</span>`).join("");
+            const giftsCount = user.gifts ? user.gifts.length : 0;
+
             const card = document.createElement("a");
             card.href = `friend.html?id=${user.id}`;
             card.className = "friend-card";
-
             card.innerHTML = `
                 <div class="friend-card__banner">
                     <span class="friend-card__banner-countdown">
                         <strong>${days}</strong>
-                        <span>${formatDaysText(days)}</span>
+                        <span>${daysText}</span>
                     </span>
                 </div>
-                <div class="friend-card__avatar">${getInitials(user.name)}</div>
+                <div class="friend-card__avatar">${initials}</div>
                 <div class="friend-card__body">
                     <div class="friend-card__name">${user.name}</div>
-                    <div class="friend-card__date">${new Date(user.birthDate).toLocaleString('ru', {day:'numeric', month:'long'})}</div>
-                    <div class="friend-card__groups">
-                        ${user.groups.map(g => `<span class="chip">${g}</span>`).join("")}
-                    </div>
+                    <div class="friend-card__date">${dateStr}</div>
+                    <div class="friend-card__groups">${groupsHtml}</div>
                     <div class="wishlist-count">
                         <i data-lucide="gift" style="width:14px;"></i>
-                        ${user.wishlist.length} ${user.wishlist.length === 1 ? 'подарок' : user.wishlist.length < 5 ? 'подарка' : 'подарков'}
+                        ${giftsCount} ${giftsCount === 1 ? 'подарок' : giftsCount > 1 && giftsCount < 5 ? 'подарка' : 'подарков'}
                     </div>
                 </div>
             `;
             friendsContainer.appendChild(card);
         });
-        if (window.lucide) lucide.createIcons();
+        if (window.lucide) window.lucide.createIcons();
     }
 
-    const friendProfileContent = document.getElementById("friend-profile-content");
-    if (friendProfileContent) {
-        const params = new URLSearchParams(window.location.search);
-        const friendId = params.get("id") || "u1"; // Дефолт u1 если зашли просто так
-        const user = mockUsers.find(u => u.id === friendId);
+    const friendProfileContainer = document.getElementById("friend-profile-content");
+    if (friendProfileContainer) {
+        const params = new URLSearchParams(location.search);
+        const friendId = params.get("id");
+        const friend = users.find(u => u.id === friendId);
 
-        if (user) {
-            const days = getDaysToBirthday(user.birthDate);
-            friendProfileContent.innerHTML = `
+        if (friend) {
+            const days = getDaysToBirthday(friend.birthday); // Исправлено на birthday
+            const daysText = formatDaysText(days);
+            const initials = getInitials(friend.name);
+            const dateStr = formatBirthDate(friend.birthday); // Исправлено на birthday
+            const groupsHtml = (friend.groups || []).map(g => `<span class="chip">${g}</span>`).join("");
+
+            const wishlistHtml = (friend.gifts || []).map(giftName => `
+                <div class="wishlist-item">
+                    <div class="wishlist-item__icon">
+                        <i data-lucide="gift" style="width:18px;"></i>
+                    </div>
+                    <span class="wishlist-item__title">${giftName}</span>
+                </div>
+            `).join("");
+
+            friendProfileContainer.innerHTML = `
                 <section class="profile-hero">
                     <div class="profile-hero__banner">
-                        <div>
+                        <div class="profile-hero__countdown">
                             <div class="profile-hero__countdown-number">${days}</div>
-                            <div class="profile-hero__countdown-label">${formatDaysText(days)} до ДР</div>
+                            <div class="profile-hero__countdown-label">${daysText} до ДР</div>
                         </div>
                     </div>
                     <div class="profile-hero__body">
-                        <div class="profile-hero__avatar">${getInitials(user.name)}</div>
-                        <div>
-                            <h1 class="profile-hero__name">${user.name}</h1>
-                            <p class="profile-hero__date">${new Date(user.birthDate).toLocaleString('ru', {day:'numeric', month:'long'})}</p>
-                            <div class="profile-hero__groups">
-                                ${user.groups.map(g => `<span class="chip">${g}</span>`).join("")}
+                        <div class="profile-hero__avatar">${initials}</div>
+                        <div class="profile-hero__info">
+                            <h1 class="profile-hero__name">${friend.name}</h1>
+                            <div class="profile-hero__meta">
+                                <span><i data-lucide="calendar" style="width:16px; vertical-align:middle;"></i> ${dateStr}</span>
                             </div>
+                            <div class="profile-hero__groups">${groupsHtml}</div>
                         </div>
                     </div>
                 </section>
 
                 <section>
-                    <div class="section-header">
-                        <h2>Список желаемых подарков</h2>
-                    </div>
+                    <h2 class="section-title">Список подарков</h2>
                     <div class="wishlist">
-                        ${user.wishlist.map(item => `
-                            <div class="wishlist-item">
-                                <div class="wishlist-item__icon">
-                                    <i data-lucide="${item.icon || 'gift'}" style="width:18px;"></i>
-                                </div>
-                                <span class="wishlist-item__title">${item.title}</span>
-                            </div>
-                        `).join("")}
+                        ${wishlistHtml || '<p class="field-hint">Список подарков пока пуст</p>'}
                     </div>
                 </section>
             `;
+            if (window.lucide) window.lucide.createIcons();
+            document.title = `${friend.name} — BdayHub`;
+        } else {
+            friendProfileContainer.innerHTML = `<p class="page-title">Пользователь не найден</p>`;
         }
-        if (window.lucide) lucide.createIcons();
     }
 
     const myHeroContainer = document.getElementById("my-hero-container");
     if (myHeroContainer) {
-        const currentUser = mockUsers.find(u => u.id === "current_user");
+        const initials = getInitials(currentUser.name);
+        const dateStr = formatBirthDate(currentUser.birthday); // Исправлено на birthday
+        const groupsHtml = (currentUser.groups || []).map(g => `<span class="chip">${g}</span>`).join("");
 
-        function renderMyProfile() {
-            const days = getDaysToBirthday(currentUser.birthDate);
-
-            myHeroContainer.innerHTML = `
-                <section class="profile-hero">
-                    <div class="profile-hero__banner">
-                        <div>
-                            <div class="profile-hero__countdown-number">${days}</div>
-                            <div class="profile-hero__countdown-label">${formatDaysText(days)} до ДР</div>
-                        </div>
+        myHeroContainer.innerHTML = `
+            <div class="profile-hero__banner"></div>
+            <div class="profile-hero__body">
+                <div class="profile-hero__avatar">${initials}</div>
+                <div class="profile-hero__info">
+                    <h1 class="profile-hero__name">${currentUser.name}</h1>
+                    <div class="profile-hero__meta">
+                        <span><i data-lucide="calendar" style="width:16px; vertical-align:middle;"></i> ${dateStr}</span>
                     </div>
-                    <div class="profile-hero__body">
-                        <div class="profile-hero__avatar">${getInitials(currentUser.name)}</div>
-                        <div>
-                            <h1 class="profile-hero__name">${currentUser.name}</h1>
-                            <p class="profile-hero__date">${new Date(currentUser.birthDate).toLocaleString('ru', {day:'numeric', month:'long'})}</p>
-                            <div class="profile-hero__groups">
-                                ${currentUser.groups.map(g => `<span class="chip">${g}</span>`).join("")}
-                            </div>
-                        </div>
-                    </div>
-                </section>
-            `;
+                    <div class="profile-hero__groups">${groupsHtml}</div>
+                </div>
+            </div>
+        `;
 
-            const groupsContainer = document.getElementById("my-groups-container");
-            groupsContainer.innerHTML = "";
-            allGroups.forEach(group => {
-                const isJoined = currentUser.groups.includes(group.name);
-                const item = document.createElement("div");
-                item.className = "group-item";
-                item.innerHTML = `
-                    <div>
-                        <div class="group-item__name">${group.name}</div>
-                        <div class="group-item__count">${group.count} участника</div>
-                    </div>
-                    ${isJoined ? `
-                        <span class="group-item__joined">
-                            <i data-lucide="check" style="width:14px;"></i>
-                            Вы участник
-                        </span>
-                    ` : `
-                        <button class="btn btn-primary btn-join" data-group="${group.name}">Вступить</button>
-                    `}
-                `;
-                groupsContainer.appendChild(item);
-            });
-
-            const wishlistContainer = document.getElementById("my-wishlist-container");
-            wishlistContainer.innerHTML = "";
-            currentUser.wishlist.forEach(item => {
-                const div = document.createElement("div");
-                div.className = "wishlist-item";
-                div.innerHTML = `
+        const myGiftsContainer = document.getElementById("my-wishlist-container");
+        if (myGiftsContainer) {
+            myGiftsContainer.innerHTML = (currentUser.gifts || []).map(giftName => `
+                <div class="wishlist-item">
                     <div class="wishlist-item__icon">
-                        <i data-lucide="${item.icon || 'gift'}" style="width:18px;"></i>
+                        <i data-lucide="gift" style="width:18px;"></i>
                     </div>
-                    <span class="wishlist-item__title">${item.title}</span>
-                `;
-                wishlistContainer.appendChild(div);
-            });
-
-            if (window.lucide) lucide.createIcons();
+                    <span class="wishlist-item__title">${giftName}</span>
+                </div>
+            `).join("");
         }
-
-        document.getElementById("my-groups-container").addEventListener("click", (e) => {
-            if (e.target.classList.contains("btn-join")) {
-                const groupName = e.target.getAttribute("data-group");
-                currentUser.groups.push(groupName);
-                const targetGroup = allGroups.find(g => g.name === groupName);
-                if (targetGroup) targetGroup.count++;
-                renderMyProfile();
-            }
-        });
-
-        document.getElementById("btn-add-gift").addEventListener("click", () => {
-            const title = prompt("Введите название подарка:");
-            if (title && title.trim() !== "") {
-                currentUser.wishlist.push({ title: title.trim(), icon: "gift" });
-                renderMyProfile();
-            }
-        });
-
-        document.getElementById("btn-create-group").addEventListener("click", () => {
-            const name = prompt("Введите название новой группы:");
-            if (name && name.trim() !== "") {
-                const trimmedName = name.trim();
-                if (!allGroups.some(g => g.name === trimmedName)) {
-                    allGroups.push({ name: trimmedName, count: 1 });
-                    currentUser.groups.push(trimmedName);
-                    renderMyProfile();
-                } else {
-                    alert("Такая группа уже существует!");
-                }
-            }
-        });
-
-        renderMyProfile();
+        if (window.lucide) window.lucide.createIcons();
     }
 });
