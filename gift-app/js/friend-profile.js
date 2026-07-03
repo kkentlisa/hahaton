@@ -49,6 +49,7 @@ export function renderFriendProfile() {
 
     const calendarBtn = node.querySelector(".js-calendar-btn");
     calendarBtn.hidden = !isFriend;
+    calendarBtn.style.display = isFriend ? "inline-flex" : "none";
     calendarBtn.addEventListener("click", () => {
         if (window.addToGoogleCalendar) {
             window.addToGoogleCalendar(friendId);
