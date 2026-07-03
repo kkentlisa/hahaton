@@ -32,7 +32,6 @@
     </a>
 
     <div class="friend-layout">
-        <!-- Сюда js/profiles.js вставит всю информацию о друге + кнопку подписки -->
         <div id="friend-profile-content">
         </div>
 
@@ -106,7 +105,6 @@
 <script src="js/usersData.js"></script>
 <script src="js/profiles.js"></script>
 
-<!-- Инициализация Firebase -->
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getFirestore }   from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
@@ -143,7 +141,6 @@
             "js-chat-messages",
             getCurrentUserName()
         );
-        // Запускаем отслеживание кнопки. Она сработает, как только profiles.js отрендерит её в DOM
         initSubscribeButton(friendId, "js-subscribe-btn", getCurrentUserName());
     }
 
