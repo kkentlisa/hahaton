@@ -269,7 +269,6 @@
     .emoji-popup   { width: 260px; height: 280px; left: var(--space-sm); }
 }
 
-/* ─── ОВЕРЛЕЙ "не в друзьях" (участник 2) ───── */
 .chat-wrap { position: relative; }
 
 .chat-overlay {
