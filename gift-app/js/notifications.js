@@ -1,52 +1,84 @@
-﻿const mockDatabase = [
-    {
-        id: 'u_001',
-        name: 'Олег Иванов',
-        birthday: '1998-07-05',
-        groups: ['Коллеги', 'Универ'],
-        gifts: ['Беспроводные наушники']
-    },
-    {
-        id: 'u_002',
-        name: 'Катя Смирнова',
-        birthday: '2001-07-12',
-        groups: ['Универ'],
-        gifts: ['Клубника в шоколаде']
-    },
-    {
-        id: 'u_003',
-        name: 'Богдан',
-        birthday: '2000-07-03',
-        groups: ['Интенсив Сочи'],
-        gifts: ['Книга по С++']
+﻿import { db } from './config.js';
+import { collection, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+let mockDatabase = [];
+
+async function loadDataFromFirebase() {
+    try {
+        const querySnapshot = await getDocs(collection(db, "users"));
+        mockDatabase = [];
+
+        querySnapshot.forEach((doc) => {
+            const data = doc.data();
+            mockDatabase.push({
+                id: doc.id,
+                name: data.name,
+                birthday: data.birthday,
+                groups: data.groups || [],
+                gifts: data.gifts || []
+            });
+        });
+
+        console.log("Данные успешно загружены из Firebase:", mockDatabase);
+
+        syncAllButtons();
+        checkBirthdays();
+
+    } catch (error) {
+        console.error("Ошибка загрузки из Firebase: ", error);
     }
-];
+}
+
+function toggleCardButtons(friendId, isSubscribed) {
+    const subscribeBtn = document.getElementById(`subscribe-${friendId}`);
+    const unsubscribeBtn = document.getElementById(`unsubscribe-${friendId}`);
+    const calendarBtn = document.getElementById(`calendar-${friendId}`);
+
+    if (subscribeBtn && unsubscribeBtn && calendarBtn) {
+        if (isSubscribed) {
+            subscribeBtn.style.display = 'none';
+            unsubscribeBtn.style.display = 'inline-block';
+            calendarBtn.style.display = 'inline-block';
+        } else {
+            subscribeBtn.style.display = 'inline-block';
+            unsubscribeBtn.style.display = 'none';
+            calendarBtn.style.display = 'none';
+        }
+    }
+}
+
+function syncAllButtons() {
+    let currentSubscriptions = JSON.parse(localStorage.getItem('mySubscriptions')) || [];
+
+    mockDatabase.forEach(friend => {
+        const isSubscribed = currentSubscriptions.includes(friend.id);
+        toggleCardButtons(friend.id, isSubscribed);
+    });
+}
 
 function subscribeToFriend(friendId) {
     let currentSubscriptions = JSON.parse(localStorage.getItem('mySubscriptions')) || [];
     if (!currentSubscriptions.includes(friendId)) {
         currentSubscriptions.push(friendId);
         localStorage.setItem('mySubscriptions', JSON.stringify(currentSubscriptions));
-        updateSubscriptionsDisplay();
+
+        toggleCardButtons(friendId, true);
         checkBirthdays();
-    } else {
-        alert('Вы уже следите за этим другом!');
     }
 }
 
 function unsubscribeFromFriend(friendId) {
     let currentSubscriptions = JSON.parse(localStorage.getItem('mySubscriptions')) || [];
-
     currentSubscriptions = currentSubscriptions.filter(id => id !== friendId);
-
     localStorage.setItem('mySubscriptions', JSON.stringify(currentSubscriptions));
-    updateSubscriptionsDisplay();
+
+    toggleCardButtons(friendId, false);
     checkBirthdays();
 }
 
 function subscribeToGroup(groupName) {
     let currentSubscriptions = JSON.parse(localStorage.getItem('mySubscriptions')) || [];
-    let addedCount = 0; // Считаем, скольких новых людей добавили
+    let addedCount = 0;
 
     mockDatabase.forEach(user => {
         if (user.groups.includes(groupName) && !currentSubscriptions.includes(user.id)) {
@@ -57,60 +89,18 @@ function subscribeToGroup(groupName) {
 
     if (addedCount > 0) {
         localStorage.setItem('mySubscriptions', JSON.stringify(currentSubscriptions));
-        updateSubscriptionsDisplay();
+        syncAllButtons();
         checkBirthdays();
-        alert(`Подписка оформлена! Добавлено человек из группы "${groupName}": ${addedCount}`);
+        alert(`Подписка оформлена! Добавлено человек: ${addedCount}`);
     } else {
-        alert(`Все участники группы "${groupName}" уже добавлены!`);
+        alert(`Все участники группы уже добавлены!`);
     }
-}
-
-// Очистка всего (для тестов)
-function clearSubscriptions() {
-    localStorage.removeItem('mySubscriptions');
-    updateSubscriptionsDisplay();
-    checkBirthdays();
-}
-
-function updateSubscriptionsDisplay() {
-    let currentSubscriptions = JSON.parse(localStorage.getItem('mySubscriptions')) || [];
-    let displayDiv = document.getElementById('my-subscriptions-list');
-    displayDiv.innerHTML = '';
-
-    if (currentSubscriptions.length === 0) {
-        displayDiv.innerHTML = '<p>Вы пока ни за кем не следите.</p>';
-        return;
-    }
-
-    currentSubscriptions.forEach(id => {
-        let friend = mockDatabase.find(user => user.id === id);
-        if (friend) {
-            let cardHTML = `
-                <div class="card" style="border: 1px solid #ccc; padding: 15px; margin: 10px 0; border-radius: 8px; position: relative;">
-                    <h3>${friend.name}</h3>
-                    <p><strong>Дата рождения:</strong> ${friend.birthday}</p>
-                    <p><strong>Группы:</strong> ${friend.groups.join(', ')}</p>
-                    <p><strong>Хочет в подарок:</strong> ${friend.gifts.join(', ')}</p>
-                    
-                    <button onclick="addToGoogleCalendar('${friend.id}')" 
-                            style="margin-top: 10px; background: #4285f4; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer;">
-                        📅 Добавить в Google Календарь
-                    </button>
-                    
-                    <button onclick="unsubscribeFromFriend('${friend.id}')" 
-                            style="position: absolute; top: 15px; right: 15px; background: #ffcdd2; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer;">
-                        ❌ Отписаться
-                    </button>
-                </div>
-            `;
-            displayDiv.innerHTML += cardHTML;
-        }
-    });
 }
 
 function checkBirthdays() {
     let currentSubscriptions = JSON.parse(localStorage.getItem('mySubscriptions')) || [];
     let notifyZone = document.getElementById('notification-zone');
+    if (!notifyZone) return;
     notifyZone.innerHTML = '';
 
     const today = new Date();
@@ -118,7 +108,7 @@ function checkBirthdays() {
 
     currentSubscriptions.forEach(id => {
         let friend = mockDatabase.find(user => user.id === id);
-        if (!friend) return;
+        if (!friend || !friend.birthday) return;
 
         const [year, month, day] = friend.birthday.split('-');
         let bdayThisYear = new Date(today.getFullYear(), month - 1, day);
@@ -142,24 +132,28 @@ function checkBirthdays() {
 
 function renderNotification(name, message, color) {
     let notifyZone = document.getElementById('notification-zone');
+    let bgColor = '#fff3e0';
+    let borderColor = '#ffb74d';
+
+    if (color === 'red') {
+        bgColor = '#ffebee';
+        borderColor = '#ef5350';
+    } else if (color === 'yellow') {
+        bgColor = '#fffde7';
+        borderColor = '#fff176';
+    }
+
     let alertHTML = `
-        <div style="background-color: ${color === 'red' ? '#ffebee' : '#fff3e0'}; 
-                    border-left: 5px solid ${color === 'red' ? '#ef5350' : '#ffb74d'}; 
-                    padding: 12px; 
-                    margin-bottom: 10px; 
-                    border-radius: 4px; color: #333;">
-            ${name}: ${message}
+        <div style="background-color: ${bgColor}; border-left: 5px solid ${borderColor}; padding: 12px; margin-bottom: 10px; border-radius: 4px; color: #333;">
+            <strong>${name}</strong>: ${message}
         </div>
     `;
     notifyZone.innerHTML += alertHTML;
 }
 
-updateSubscriptionsDisplay();
-checkBirthdays();
-
 function addToGoogleCalendar(friendId) {
     let friend = mockDatabase.find(user => user.id === friendId);
-    if (!friend) return;
+    if (!friend || !friend.birthday) return;
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -173,17 +167,21 @@ function addToGoogleCalendar(friendId) {
     }
 
     const startDate = `${eventYear}${bMonth}${bDay}`;
-
     let nextDay = new Date(eventYear, bMonth - 1, parseInt(bDay) + 1);
     let endMonth = String(nextDay.getMonth() + 1).padStart(2, '0');
     let endDateFormatted = String(nextDay.getDate()).padStart(2, '0');
     const endDate = `${nextDay.getFullYear()}${endMonth}${endDateFormatted}`;
 
     const title = encodeURIComponent(`День рождения: ${friend.name}`);
-
     const description = encodeURIComponent(`Идеи для подарка: ${friend.gifts.join(', ')}`);
 
     const googleCalendarUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${startDate}/${endDate}&details=${description}`;
-
     window.open(googleCalendarUrl, '_blank');
 }
+
+window.subscribeToFriend = subscribeToFriend;
+window.unsubscribeFromFriend = unsubscribeFromFriend;
+window.subscribeToGroup = subscribeToGroup;
+window.addToGoogleCalendar = addToGoogleCalendar;
+
+loadDataFromFirebase();
