@@ -8,6 +8,7 @@ const groupsCol = collection(db, "groups");
 const usersListEl = document.getElementById('usersList');
 const groupsListEl = document.getElementById('groupsList');
 const groupCheckboxesEl = document.getElementById('userGroupCheckboxes');
+const friendCheckboxesEl = document.getElementById('userFriendCheckboxes');
 const userSearchEl = document.getElementById('userSearch');
 const groupSearchEl = document.getElementById('groupSearch');
 
@@ -54,6 +55,7 @@ function renderUsers() {
             <td>${escapeHtml(user.birthday || '—')}</td>
             <td>${renderChipList(user.groups)}</td>
             <td>${renderChipList(user.gifts)}</td>
+            <td>${renderFriendsChipList(user.friends)}</td>
             <td>
                 <div class="row-actions">
                     <button data-id="${user.id}" class="edit-user btn btn-secondary btn-sm">Изменить</button>
@@ -68,6 +70,13 @@ function renderChipList(items) {
     const clean = (items || []).filter(Boolean);
     if (clean.length === 0) return '<span class="chip-muted">—</span>';
     return `<div class="chip-list">${clean.map((i) => `<span class="chip">${escapeHtml(i)}</span>`).join('')}</div>`;
+}
+
+function renderFriendsChipList(friendIds) {
+    const clean = (friendIds || []).filter(Boolean);
+    if (clean.length === 0) return '<span class="chip-muted">—</span>';
+    const names = clean.map((id) => users.find((u) => u.id === id)?.name || '(удалён)');
+    return `<div class="chip-list">${names.map((n) => `<span class="chip">${escapeHtml(n)}</span>`).join('')}</div>`;
 }
 
 usersListEl.addEventListener('click', (e) => {
@@ -104,6 +113,25 @@ groupCheckboxesEl.addEventListener('click', (e) => {
     if (chip) chip.classList.toggle('is-selected');
 });
 
+
+function renderFriendCheckboxes(selected = [], excludeUserId = null) {
+    const candidates = users.filter((u) => u.id !== excludeUserId);
+    if (candidates.length === 0) {
+        friendCheckboxesEl.innerHTML = "<p class='field-hint'>Пока некого выбрать — сначала добавьте других пользователей.</p>";
+        return;
+    }
+    friendCheckboxesEl.innerHTML = candidates.map((u) => `
+        <button type="button" class="chip-toggle ${selected.includes(u.id) ? 'is-selected' : ''}" data-value="${u.id}">
+            ${escapeHtml(u.name || '—')}
+        </button>
+    `).join('');
+}
+
+friendCheckboxesEl.addEventListener('click', (e) => {
+    const chip = e.target.closest('.chip-toggle');
+    if (chip) chip.classList.toggle('is-selected');
+});
+
 window.openUserModal = function openUserModal(userId = null) {
     const user = userId ? users.find((u) => u.id === userId) : null;
 
@@ -115,6 +143,7 @@ window.openUserModal = function openUserModal(userId = null) {
     document.getElementById('userGifts').value = (user?.gifts || []).join('\n');
 
     renderGroupCheckboxes(user?.groups || []);
+    renderFriendCheckboxes(user?.friends || [], userId);
     userModal.classList.remove('hidden');
 };
 
@@ -136,13 +165,14 @@ userForm.addEventListener('submit', async (e) => {
         .map((s) => s.trim())
         .filter(Boolean);
     const selectedGroups = [...groupCheckboxesEl.querySelectorAll('.chip-toggle.is-selected')].map((c) => c.dataset.value);
+    const selectedFriends = [...friendCheckboxesEl.querySelectorAll('.chip-toggle.is-selected')].map((c) => c.dataset.value);
 
     if (!name || !birthday) {
         showToast("Заполните имя и дату рождения.", true);
         return;
     }
 
-    const payload = { name, birthday, gifts, groups: selectedGroups };
+    const payload = { name, birthday, gifts, groups: selectedGroups, friends: selectedFriends };
     const editingId = userForm.dataset.editingId;
 
     if (editingId) {
@@ -295,6 +325,7 @@ window.importUsers = async function importUsers() {
             birthday: user.birthday || "",
             gifts: Array.isArray(user.gifts) ? user.gifts : [],
             groups: Array.isArray(user.groups) ? user.groups : [],
+            friends: [],
         });
         (user.groups || []).forEach((g) => {
             if (!existingGroupNames.has(g)) newGroupNames.add(g);
