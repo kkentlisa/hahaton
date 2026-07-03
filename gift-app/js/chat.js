@@ -22,7 +22,6 @@ export function initChatInterface(chatId, formId, inputId, messagesId, currentUs
         return;
     }
 
-    // Убрали orderBy из запроса, чтобы Firebase не требовал индексов и не падал
     const q = query(
         collection(window.db, "messages"),
         where("chatId", "==", chatId)
@@ -42,17 +41,14 @@ export function initChatInterface(chatId, formId, inputId, messagesId, currentUs
 
         container.innerHTML = "";
 
-        // Вытягиваем документы в массив
         const docsArray = snapshot.docs.map(docSnap => ({ id: docSnap.id, ...docSnap.data() }));
 
-        // Сортируем сообщения по времени прямо на клиенте (безопасно для Firebase)
         docsArray.sort((a, b) => {
             const timeA = a.timestamp ? (a.timestamp.toDate ? a.timestamp.toDate().getTime() : new Date(a.timestamp).getTime()) : 0;
             const timeB = b.timestamp ? (b.timestamp.toDate ? b.timestamp.toDate().getTime() : new Date(b.timestamp).getTime()) : 0;
             return timeA - timeB;
         });
 
-        // Рендерим отсортированный массив
         docsArray.forEach((data) => {
             const msgElement = document.createElement("div");
 
@@ -102,10 +98,6 @@ export function initChatInterface(chatId, formId, inputId, messagesId, currentUs
     });
 }
 
-// Кнопка "Подписаться" на странице друга: подписавшийся автоматически
-// становится участником чата этого друга (документ chats/{friendId}
-// создаётся автоматически при первой подписке — отдельно настраивать
-// коллекцию не нужно).
 export function initSubscribeButton(friendId, buttonId, currentUserName) {
     const btn = document.getElementById(buttonId);
     if (!btn) return;
@@ -140,7 +132,6 @@ export function initSubscribeButton(friendId, buttonId, currentUserName) {
     });
 }
 
-// Вспомогательная функция защиты от XSS (внедрения тегов пользователями)
 function escapeHtml(str) {
     if (!str) return "";
     return String(str)
