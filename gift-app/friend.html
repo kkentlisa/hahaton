@@ -10,7 +10,8 @@
 
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/profiles.css">
-    <link rel="stylesheet" href="css/chat.css"> </head>
+    <link rel="stylesheet" href="css/chat.css">
+</head>
 <body>
 
 <header class="site-header">
@@ -31,6 +32,7 @@
     </a>
 
     <div class="friend-layout">
+        <!-- Сюда js/profiles.js вставит всю информацию о друге + кнопку подписки -->
         <div id="friend-profile-content">
         </div>
 
@@ -104,6 +106,7 @@
 <script src="js/usersData.js"></script>
 <script src="js/profiles.js"></script>
 
+<!-- Инициализация Firebase -->
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getFirestore }   from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
@@ -122,7 +125,7 @@
 <script type="module" src="js/notifications.js"></script>
 
 <script type="module">
-    import { initChatInterface } from "./js/chat.js";
+    import { initChatInterface, initSubscribeButton } from "./js/chat.js";
 
     const params   = new URLSearchParams(location.search);
     const friendId = params.get("id") || "default";
@@ -132,7 +135,7 @@
         return localStorage.getItem("wishbird_username") || "Гость";
     }
 
-    window.addEventListener("firebase-ready", () => {
+    function startChat() {
         initChatInterface(
             `friend_${friendId}`,
             "js-chat-form",
@@ -140,7 +143,15 @@
             "js-chat-messages",
             getCurrentUserName()
         );
-    });
+        // Запускаем отслеживание кнопки. Она сработает, как только profiles.js отрендерит её в DOM
+        initSubscribeButton(friendId, "js-subscribe-btn", getCurrentUserName());
+    }
+
+    if (window.db) {
+        startChat();
+    } else {
+        window.addEventListener("firebase-ready", startChat);
+    }
 
     window.addEventListener("chat-pinned-update", (e) => {
         const wrap = document.getElementById("js-pinned");
