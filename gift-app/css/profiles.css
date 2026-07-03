@@ -183,7 +183,7 @@
 .profile-hero__body {
     display: flex;
     align-items: flex-end;
-    gap: var(--space-lg);
+    gap: var(--space-xl);
     padding: 0 var(--space-2xl) var(--space-2xl);
     margin-top: -55px;
 }
@@ -208,12 +208,12 @@
 .profile-hero__name {
     font-family: var(--font-display);
     font-size: var(--font-size-2xl);
-    margin-bottom: var(--space-xs);
+    margin-bottom: var(--space-sm);
 }
 
 .profile-hero__date {
     color: var(--color-text-secondary);
-    margin-bottom: var(--space-sm);
+    margin-bottom: var(--space-md);
 }
 
 .profile-hero__groups {

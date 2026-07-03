@@ -31,11 +31,17 @@ function getInitials(name) {
     return name.split(" ").map(n => n[0]).join("").toUpperCase();
 }
 
-function formatBirthDate(dateString) {
+function formatBirthDate(dateString, includeYear = false) {
     if (!dateString) return "";
     const months = ["января", "февраля", "марта", "апреля", "мая", "июня", "июля", "августа", "сентября", "октября", "ноября", "декабря"];
     const d = new Date(dateString);
-    return `${d.getDate()} ${months[d.getMonth()]}`;
+    const day = d.getDate();
+    const month = months[d.getMonth()];
+
+    if (includeYear) {
+        return `${day} ${month} ${d.getFullYear()} года`;
+    }
+    return `${day} ${month}`;
 }
 
 const usersCol = collection(db, "users");
@@ -45,8 +51,6 @@ document.getElementById('logoutBtn')?.addEventListener('click', async () => {
     window.location.href = "login.html";
 });
 
-// Все страницы, подключающие profiles.js, требуют входа — без сессии
-// сразу уводим на страницу логина и дальше ничего не грузим.
 let usersUnsubscribe = null;
 
 watchAuthState((authUser) => {
@@ -54,27 +58,25 @@ watchAuthState((authUser) => {
         window.location.href = "login.html";
         return;
     }
-    if (usersUnsubscribe) return; // сессия уже подтверждена, повторно не подписываемся
+    if (usersUnsubscribe) return;
 
     usersUnsubscribe = onSnapshot(usersCol, (snapshot) => {
         const users = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
 
-        // Текущий пользователь — тот, кто реально вошёл (по uid из Firebase Auth),
-        // а не первая запись в базе.
         const currentUser = users.find(u => u.id === authUser.uid)
             || { name: authUser.email, groups: [], gifts: [] };
         window.currentUser = currentUser;
-        window.dispatchEvent(new Event("currentUser-ready")); // Уведомляем другие скрипты о загрузке юзера
+        window.dispatchEvent(new Event("currentUser-ready"));
 
         const friendsContainer = document.getElementById("friends-container");
     if (friendsContainer) {
         friendsContainer.innerHTML = "";
 
         users.forEach(user => {
-            const days = getDaysToBirthday(user.birthday); // Исправлено на birthday
+            const days = getDaysToBirthday(user.birthday);
             const daysText = formatDaysText(days);
             const initials = getInitials(user.name);
-            const dateStr = formatBirthDate(user.birthday); // Исправлено на birthday
+            const dateStr = formatBirthDate(user.birthday);
             const groupsHtml = (user.groups || []).map(g => `<span class="chip">${g}</span>`).join("");
             const giftsCount = user.gifts ? user.gifts.length : 0;
 
@@ -111,10 +113,10 @@ watchAuthState((authUser) => {
         const friend = users.find(u => u.id === friendId);
 
         if (friend) {
-            const days = getDaysToBirthday(friend.birthday); // Исправлено на birthday
+            const days = getDaysToBirthday(friend.birthday);
             const daysText = formatDaysText(days);
             const initials = getInitials(friend.name);
-            const dateStr = formatBirthDate(friend.birthday); // Исправлено на birthday
+            const dateStr = formatBirthDate(friend.birthday, true);
             const groupsHtml = (friend.groups || []).map(g => `<span class="chip">${g}</span>`).join("");
 
             const wishlistHtml = (friend.gifts || []).map(giftName => `
@@ -163,21 +165,23 @@ watchAuthState((authUser) => {
     const myHeroContainer = document.getElementById("my-hero-container");
     if (myHeroContainer) {
         const initials = getInitials(currentUser.name);
-        const dateStr = formatBirthDate(currentUser.birthday); // Исправлено на birthday
+        const dateStr = formatBirthDate(currentUser.birthday, true);
         const groupsHtml = (currentUser.groups || []).map(g => `<span class="chip">${g}</span>`).join("");
 
         myHeroContainer.innerHTML = `
-            <div class="profile-hero__banner"></div>
-            <div class="profile-hero__body">
-                <div class="profile-hero__avatar">${initials}</div>
-                <div class="profile-hero__info">
-                    <h1 class="profile-hero__name">${currentUser.name}</h1>
-                    <div class="profile-hero__meta">
-                        <span><i data-lucide="calendar" style="width:16px; vertical-align:middle;"></i> ${dateStr}</span>
+            <section class="profile-hero">
+                <div class="profile-hero__banner"></div>
+                <div class="profile-hero__body">
+                    <div class="profile-hero__avatar">${initials}</div>
+                    <div class="profile-hero__info">
+                        <h1 class="profile-hero__name">${currentUser.name}</h1>
+                        <div class="profile-hero__date">
+                            <i data-lucide="calendar" style="width:16px; vertical-align:middle;"></i> ${dateStr}
+                        </div>
+                        <div class="profile-hero__groups">${groupsHtml}</div>
                     </div>
-                    <div class="profile-hero__groups">${groupsHtml}</div>
                 </div>
-            </div>
+            </section>
         `;
 
         const myGiftsContainer = document.getElementById("my-wishlist-container");
