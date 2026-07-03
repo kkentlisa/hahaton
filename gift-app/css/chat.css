@@ -1,9 +1,3 @@
-/* ═══════════════════════════════════════════════
-   chat.css — участник 2
-   Полный экран, без хедера, только var() из style.css
-═══════════════════════════════════════════════ */
-
-/* ─── СБРОС ДЛЯ СТРАНИЦЫ ДРУГА ──────────────── */
 .friend-body {
     margin: 0;
     padding: 0;
@@ -11,107 +5,11 @@
     overflow: hidden;
 }
 
-/* ─── МАКЕТ: две колонки на весь экран ──────── */
 .friend-page {
-    display: grid;
-    grid-template-columns: 1fr 420px;
     height: 100vh;
     overflow: hidden;
 }
 
-/* ─── ЛЕВАЯ ПАНЕЛЬ (заглушка / участник 1) ──── */
-.friend-profile {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-md);
-    padding: var(--space-lg);
-    overflow-y: auto;
-    background: var(--color-surface);
-    border-right: 1.5px solid var(--color-border);
-}
-
-.friend-profile::-webkit-scrollbar { width: 4px; }
-.friend-profile::-webkit-scrollbar-thumb { background: var(--color-border); border-radius: var(--radius-full); }
-
-/* Кнопка назад */
-.profile-back {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--space-xs);
-    font-size: var(--font-size-sm);
-    font-weight: 600;
-    color: var(--color-text-secondary);
-    text-decoration: none;
-    padding: var(--space-xs) 0;
-    transition: color 0.15s;
-    margin-bottom: var(--space-xs);
-}
-.profile-back:hover { color: var(--color-secondary); }
-
-/* Герой */
-.profile-hero {
-    display: flex;
-    align-items: center;
-    gap: var(--space-md);
-}
-
-.profile-avatar {
-    width: 64px;
-    height: 64px;
-    border-radius: var(--radius-full);
-    overflow: hidden;
-    border: 3px solid var(--color-gold);
-    flex-shrink: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 28px;
-    background: var(--color-surface-soft);
-}
-.profile-avatar img { width: 100%; height: 100%; object-fit: cover; }
-
-.profile-identity { display: flex; flex-direction: column; gap: var(--space-xs); }
-.profile-name { font-size: var(--font-size-lg); font-weight: 800; color: var(--color-navy); }
-
-/* Поля */
-.profile-field { display: flex; flex-direction: column; gap: 4px; }
-.profile-field__label {
-    font-size: 11px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.07em;
-    color: var(--color-text-secondary);
-}
-.profile-field__value { font-size: var(--font-size-sm); color: var(--color-text-primary); font-weight: 600; }
-
-.profile-tags { display: flex; flex-wrap: wrap; gap: var(--space-xs); margin-top: 2px; }
-
-/* Вишлист */
-.profile-section { display: flex; flex-direction: column; gap: var(--space-sm); }
-.profile-wishlist { display: flex; flex-direction: column; gap: 6px; padding: 0; list-style: none; }
-.profile-wishlist li {
-    display: flex;
-    align-items: center;
-    gap: var(--space-sm);
-    font-size: var(--font-size-sm);
-    padding: var(--space-sm) var(--space-sm);
-    background: var(--color-bg);
-    border-radius: var(--radius-sm);
-    border: 1px solid var(--color-border);
-}
-.profile-wishlist li::before { content: "🎁"; font-size: 14px; }
-.profile-wishlist__empty { color: var(--color-text-secondary); font-style: italic; border: none !important; background: none !important; }
-
-/* Подписка */
-.profile-subscribe {
-    margin-top: auto;
-    width: 100%;
-    text-align: center;
-    padding: var(--space-md);
-    font-size: var(--font-size-sm);
-}
-
-/* ─── ПРАВАЯ КОЛОНКА — внешний контейнер ────── */
 .chat-wrap-outer {
     background: var(--color-bg);
     padding: var(--space-lg);
@@ -122,7 +20,6 @@
     box-sizing: border-box;
 }
 
-/* ─── КАРТОЧКА ЧАТА ──────────────────────────── */
 .chat-wrap {
     display: flex;
     flex-direction: column;
@@ -139,7 +36,6 @@
     box-shadow: var(--shadow-md);
 }
 
-/* ─── ШАПКА ──────────────────────────────────── */
 .chat-head {
     display: flex;
     align-items: center;
@@ -194,10 +90,6 @@
 }
 .chat-icon-btn:hover { background: var(--color-plum); color: var(--color-surface); }
 
-.chat-composer .chat-icon-btn { color: var(--color-text-secondary); }
-.chat-composer .chat-icon-btn:hover { background: var(--color-border); color: var(--color-secondary); }
-
-/* ─── ЗАКРЕПЛЁННОЕ ───────────────────────────── */
 .chat-pinned {
     display: flex;
     align-items: center;
@@ -224,7 +116,6 @@
 .chat-pinned__close { color: var(--color-text-secondary); cursor: pointer; flex-shrink: 0; opacity: 0.45; transition: opacity 0.15s; }
 .chat-pinned__close:hover { opacity: 1; }
 
-/* ─── ЛЕНТА СООБЩЕНИЙ ────────────────────────── */
 .chat-messages {
     flex: 1;
     overflow-y: auto;
@@ -239,7 +130,6 @@
 .chat-messages::-webkit-scrollbar-track { background: transparent; }
 .chat-messages::-webkit-scrollbar-thumb { background: var(--color-border); border-radius: var(--radius-full); }
 
-/* ─── ПУСТОЕ СОСТОЯНИЕ ───────────────────────── */
 .chat-empty {
     flex: 1;
     display: flex;
@@ -254,19 +144,6 @@
 .chat-empty__title { font-size: var(--font-size-lg); font-weight: 700; color: var(--color-navy); }
 .chat-empty__sub { font-size: var(--font-size-sm); color: var(--color-text-secondary); max-width: 240px; line-height: 1.6; }
 
-/* ─── РАЗДЕЛИТЕЛЬ ДНЯ ────────────────────────── */
-.chat-date-divider { display: flex; align-items: center; justify-content: center; margin: var(--space-md) 0 var(--space-sm); }
-.chat-date-divider span {
-    background: var(--color-gold);
-    color: var(--color-navy);
-    font-size: 11px;
-    font-weight: 700;
-    padding: 4px var(--space-md);
-    border-radius: var(--radius-full);
-    letter-spacing: 0.03em;
-}
-
-/* ─── ПУЗЫРЬКИ ───────────────────────────────── */
 .msg {
     display: flex;
     flex-direction: column;
@@ -280,16 +157,6 @@
     to   { opacity: 1; transform: scale(1)    translateY(0); }
 }
 
-/* Чужие — слева */
-.msg--other { align-self: flex-start; align-items: flex-start; }
-.msg--other .msg__bubble {
-    background: var(--color-surface);
-    color: var(--color-text-primary);
-    border-radius: 4px var(--radius-lg) var(--radius-lg) var(--radius-lg);
-    box-shadow: var(--shadow-sm);
-}
-
-/* Свои — справа */
 .msg--own { align-self: flex-end; align-items: flex-end; }
 .msg--own .msg__bubble {
     background: var(--color-secondary);
@@ -298,7 +165,6 @@
     box-shadow: var(--shadow-sm);
 }
 
-/* Имя */
 .msg__sender {
     font-size: 11px;
     font-weight: 700;
@@ -308,7 +174,6 @@
 }
 .msg--own .msg__sender { display: none; }
 
-/* Тело */
 .msg__bubble {
     padding: var(--space-sm) var(--space-md) 22px;
     font-size: var(--font-size-sm);
@@ -317,7 +182,6 @@
     position: relative;
 }
 
-/* Время */
 .msg__time {
     font-size: 10px;
     opacity: 0.45;
@@ -329,22 +193,6 @@
 }
 .msg--own .msg__time { color: var(--color-peach); opacity: 0.8; }
 
-/* Системное */
-.msg.system { align-self: center; max-width: 86%; }
-.msg.system .msg__bubble {
-    background: var(--color-gold);
-    color: var(--color-navy);
-    border-radius: var(--radius-full);
-    font-size: 12px;
-    font-style: italic;
-    text-align: center;
-    box-shadow: none;
-    padding: 5px var(--space-lg);
-}
-.msg.system .msg__sender,
-.msg.system .msg__time { display: none; }
-
-/* ─── ПОЛЕ ВВОДА ─────────────────────────────── */
 .chat-composer {
     padding: var(--space-md) var(--space-xl);
     background: var(--color-surface);
@@ -398,13 +246,6 @@
 }
 .chat-send:hover { background: var(--color-rose); box-shadow: var(--shadow-hover); }
 .chat-send:active { transform: scale(0.9); }
-
-@media (max-width: 860px) {
-    .friend-body { height: auto; overflow: auto; }
-    .friend-page { grid-template-columns: 1fr; grid-template-rows: auto 1fr; height: auto; overflow: visible; }
-    .friend-profile { border-right: none; border-bottom: 1.5px solid var(--color-border); max-height: 50vh; }
-    .chat-wrap { height: 80vh; }
-}
 
 @media (max-width: 480px) {
     .chat-head     { padding: var(--space-sm) var(--space-md); min-height: 56px; }
