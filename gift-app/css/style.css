@@ -1,0 +1,112 @@
+:root {
+    --color-navy: #3B3B70;
+    --color-plum: #8E5389;
+    --color-rose: #DB7891;
+    --color-coral: #F8917E;
+    --color-peach: #F8B98B;
+    --color-gold: #F6D89A;
+
+    --color-bg: #FFF8EE;
+    --color-surface: #FFFFFF;
+    --color-surface-soft: var(--color-gold);
+
+    --color-text-primary: var(--color-navy);
+    --color-text-secondary: #6B6B8F;
+
+    --color-accent: var(--color-coral);
+    --color-accent-hover: var(--color-rose);
+    --color-secondary: var(--color-plum);
+
+    --color-border: #F0DEC8;
+
+    --space-xs: 4px;
+    --space-sm: 8px;
+    --space-md: 16px;
+    --space-lg: 24px;
+    --space-xl: 32px;
+    --space-2xl: 48px;
+
+    --radius-sm: 8px;
+    --radius-md: 14px;
+    --radius-lg: 20px;
+    --radius-full: 999px;
+
+    --shadow-sm: 0 2px 8px rgba(59, 59, 112, 0.08);
+    --shadow-md: 0 8px 24px rgba(59, 59, 112, 0.12);
+    --shadow-hover: 0 12px 32px rgba(248, 145, 126, 0.25);
+
+    --font-main: 'Manrope', sans-serif;
+    --font-size-sm: 14px;
+    --font-size-base: 16px;
+    --font-size-lg: 20px;
+    --font-size-xl: 28px;
+    --font-size-2xl: 36px;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: var(--font-main);
+    background: var(--color-bg);
+    color: var(--color-text-primary);
+    font-size: var(--font-size-base);
+    line-height: 1.5;
+}
+
+h1, h2, h3 {
+    font-weight: 700;
+    color: var(--color-navy);
+}
+
+a { text-decoration: none; color: inherit; }
+ul { list-style: none; }
+button { font-family: inherit; cursor: pointer; border: none; }
+
+.site-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--space-lg) var(--space-2xl);
+    background: var(--color-surface);
+    box-shadow: var(--shadow-sm);
+}
+
+.site-header__logo {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    font-weight: 800;
+    font-size: var(--font-size-lg);
+    color: var(--color-navy);
+}
+
+.btn {
+    padding: var(--space-sm) var(--space-lg);
+    border-radius: var(--radius-full);
+    font-weight: 600;
+    font-size: var(--font-size-sm);
+    transition: background 0.2s ease, transform 0.15s ease;
+}
+
+.btn-primary {
+    background: var(--color-accent);
+    color: white;
+}
+
+.btn-primary:hover {
+    background: var(--color-accent-hover);
+}
+
+.chip {
+    display: inline-block;
+    background: var(--color-surface-soft);
+    color: var(--color-navy);
+    padding: var(--space-xs) var(--space-md);
+    border-radius: var(--radius-full);
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+}
