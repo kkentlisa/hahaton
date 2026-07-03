@@ -4,11 +4,7 @@ import {
     query,
     where,
     onSnapshot,
-    serverTimestamp,
-    doc,
-    updateDoc,
-    arrayUnion,
-    arrayRemove
+    serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 const USER_PALETTE = [
@@ -140,9 +136,7 @@ export function initChatOverlay(friendId) {
         overlay.classList.toggle("chat-overlay--hidden", hasAccess);
     }
 
-    // Проверяем сразу если данные уже есть
     checkAccess();
 
-    // И при каждом обновлении данных пользователя
     window.addEventListener("user-data-updated", checkAccess);
 }
