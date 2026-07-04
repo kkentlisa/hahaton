@@ -53,9 +53,20 @@
     <section class="profile-hero">
         <div class="profile-hero__banner"></div>
         <div class="profile-hero__body">
-            <div class="profile-hero__avatar js-avatar"></div>
+
+            <div class="profile-hero__avatar-wrapper">
+                <div class="profile-hero__avatar js-avatar"></div>
+
+                <button class="avatar-upload-btn js-avatar-upload" type="button" title="Загрузить фото">
+                    <i data-lucide="camera" style="width: 16px;"></i>
+                </button>
+                <input type="file" class="js-avatar-input" accept="image/png, image/jpeg, image/webp" hidden>
+            </div>
+
             <div class="profile-hero__info">
                 <h1 class="profile-hero__name js-name"></h1>
+                <button class="avatar-delete-btn js-avatar-delete" hidden>Удалить фото</button>
+
                 <div class="profile-hero__date">
                     <i data-lucide="calendar" style="width:16px; vertical-align:middle;"></i>
                     <span class="js-date"></span>

@@ -33,9 +33,16 @@ export function renderFriends() {
         const card = node.querySelector(".friend-card");
         card.href = `friend.html?id=${user.id}`;
 
+        const avatarContainer = node.querySelector(".js-avatar");
+
+        if (user.avatar) {
+            avatarContainer.innerHTML = `<img src="${user.avatar}" alt="${user.name}">`;
+        } else {
+            avatarContainer.textContent = getInitials(user.name);
+        }
+
         card.querySelector(".js-days").textContent = days;
         card.querySelector(".js-days-text").textContent = daysText;
-        card.querySelector(".js-avatar").textContent = initials;
         card.querySelector(".js-name").textContent = user.name;
         card.querySelector(".js-date").textContent = dateStr;
         card.querySelector(".js-gifts-count").textContent = `${giftsCount} ${pluralizeGifts(giftsCount)}`;

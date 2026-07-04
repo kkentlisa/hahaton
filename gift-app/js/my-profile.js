@@ -64,6 +64,49 @@ export function renderMyProfile() {
         groupsContainer.appendChild(chip);
     });
 
+    const avatarContainer = node.querySelector(".js-avatar");
+    const uploadBtn = node.querySelector(".js-avatar-upload");
+    const fileInput = node.querySelector(".js-avatar-input");
+    const deleteBtn = node.querySelector(".js-avatar-delete");
+
+    if (currentUser.avatar) {
+        avatarContainer.innerHTML = `<img src="${currentUser.avatar}" alt="Аватар">`;
+        deleteBtn.hidden = false;
+    } else {
+        avatarContainer.textContent = initials;
+        deleteBtn.hidden = true;
+    }
+
+    uploadBtn.addEventListener("click", () => {
+        fileInput.click();
+    });
+
+    fileInput.addEventListener("change", async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        if (file.size > 1024 * 1024) {
+            alert("Файл слишком большой. Пожалуйста, выберите фото размером до 1 МБ.");
+            return;
+        }
+
+        const fileReader = new FileReader();
+        fileReader.onload = async (event) => {
+            const base64String = event.target.result;
+
+            await updateDoc(doc(db, "users", currentUserId), {
+                avatar: base64String
+            });
+        };
+        fileReader.readAsDataURL(file);
+    });
+
+    deleteBtn.addEventListener("click", async () => {
+        await updateDoc(doc(db, "users", currentUserId), {
+            avatar: null
+        });
+    });
+
     myHeroContainer.innerHTML = "";
     myHeroContainer.appendChild(node);
 

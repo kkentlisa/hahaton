@@ -28,9 +28,16 @@ export function renderFriendProfile() {
     const profileTemplate = document.getElementById("friend-profile-template");
     const node = profileTemplate.content.cloneNode(true);
 
+    const avatarContainer = node.querySelector(".js-avatar");
+
+    if (friend.avatar) {
+        avatarContainer.innerHTML = `<img src="${friend.avatar}" alt="${friend.name}">`;
+    } else {
+        avatarContainer.textContent = getInitials(friend.name);
+    }
+
     node.querySelector(".js-days").textContent = days;
     node.querySelector(".js-days-text").textContent = daysText;
-    node.querySelector(".js-avatar").textContent = initials;
     node.querySelector(".js-name").textContent = friend.name;
     node.querySelector(".js-date").textContent = dateStr;
 
