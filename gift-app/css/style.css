@@ -35,8 +35,6 @@
     --shadow-md: 0 8px 24px rgba(59, 59, 112, 0.12);
     --shadow-hover: 0 12px 32px rgba(248, 145, 126, 0.25);
 
-    /* Manrope — рабочий шрифт (даты, чипы, текст).
-       Fraunces — шрифт с характером, только для имён и заголовков. */
     --font-main: 'Manrope', sans-serif;
     --font-display: 'Fraunces', serif;
     --font-size-sm: 14px;

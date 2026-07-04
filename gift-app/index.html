@@ -9,7 +9,9 @@
     <script src="https://unpkg.com/lucide@latest"></script>
 
     <link rel="stylesheet" href="css/style.css">
-    <link rel="stylesheet" href="css/profiles.css">
+    <link rel="stylesheet" href="css/utils.css">
+    <link rel="stylesheet" href="css/friends-grid.css">
+    <link rel="stylesheet" href="css/profile.css">
 </head>
 <body>
 
@@ -36,6 +38,34 @@
 
     <div class="friends-grid" id="friends-container"></div>
 </main>
+
+<template id="friend-card-template">
+    <a class="friend-card">
+        <div class="friend-card__banner">
+            <span class="friend-card__banner-countdown">
+                <strong class="js-days"></strong>
+                <span class="js-days-text"></span>
+            </span>
+            <span class="friend-badge js-friend-badge" hidden>👥 В друзьях</span>
+        </div>
+        <div class="friend-card__avatar js-avatar"></div>
+        <div class="friend-card__body">
+            <div class="friend-card__name js-name"></div>
+            <div class="friend-card__date js-date"></div>
+            <div class="friend-card__groups js-groups"></div>
+            <div class="wishlist-count">
+                <i data-lucide="gift" style="width:14px;"></i>
+                <span class="js-gifts-count"></span>
+            </div>
+        </div>
+    </a>
+</template>
+
+<template id="empty-state-template">
+    <div class="empty-state">
+        <p class="empty-state__text"></p>
+    </div>
+</template>
 
 <script type="module" src="js/profiles.js"></script>
 <script type="module" src="js/notifications.js"></script>
