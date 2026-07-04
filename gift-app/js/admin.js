@@ -1,4 +1,12 @@
-import { collection, onSnapshot, doc, deleteDoc, addDoc, updateDoc, arrayUnion, arrayRemove, } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { collection,
+    onSnapshot,
+    doc,
+    deleteDoc,
+    addDoc,
+    updateDoc,
+    arrayUnion,
+    arrayRemove
+} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 import { db } from "./config.js";
 import { watchAuthState, checkIsAdmin, logout } from "./auth.js";
 
@@ -32,14 +40,13 @@ function startAdminData() {
     });
 }
 
+
 userSearchEl.addEventListener('input', renderUsers);
 groupSearchEl.addEventListener('input', renderGroups);
 
-
 function renderUsers() {
     const query = userSearchEl.value.trim().toLowerCase();
-    const filtered = query
-        ? users.filter((u) =>
+    const filtered = query ? users.filter((u) =>
             (u.name || '').toLowerCase().includes(query) ||
             (u.groups || []).some((g) => g.toLowerCase().includes(query)))
         : users;
@@ -78,6 +85,7 @@ function renderFriendsChipList(friendIds) {
     const names = clean.map((id) => users.find((u) => u.id === id)?.name || '(удалён)');
     return `<div class="chip-list">${names.map((n) => `<span class="chip">${escapeHtml(n)}</span>`).join('')}</div>`;
 }
+
 
 usersListEl.addEventListener('click', (e) => {
     const editBtn = e.target.closest('.edit-user');

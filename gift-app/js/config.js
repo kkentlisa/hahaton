@@ -9,5 +9,6 @@ const firebaseConfig = { apiKey: "AIzaSyAe4ZXtxKH119CrCwBXM7ZjXDyiH5n3tjU",
     messagingSenderId: "650338158827",
     appId: "1:650338158827:web:0bd1caba97a65a2de1d6ae" };
 const app = initializeApp(firebaseConfig);
+
 export const db = getFirestore(app);
 export const auth = getAuth(app);

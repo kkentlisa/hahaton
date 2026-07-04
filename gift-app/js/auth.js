@@ -16,6 +16,7 @@ import {
 import { auth, db } from "./config.js";
 
 const USERNAME_DOMAIN = "wishbird.local";
+
 const usernameToEmail = (username) => `${username}@${USERNAME_DOMAIN}`;
 
 function normalizeUsername(raw) {
@@ -71,14 +72,13 @@ export async function loginUser(username, password) {
     }
 }
 
-
 export async function loginAdmin(email, password) {
     let credential;
     try {
         credential = await signInWithEmailAndPassword(auth, email.trim().toLowerCase(), password);
     } catch (error) {
         console.error("Firebase auth error (loginAdmin):", error.code, error.message);
-        throw new Error(`Неверный email или пароль (${error.code})`);
+        throw new Error(`Неверный email или пароль`);
     }
 
     const isAdmin = await checkIsAdmin(credential.user.uid);
