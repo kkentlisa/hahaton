@@ -9,7 +9,6 @@ let currentUserId = null;
 function loadDataFromFirebase() {
     onSnapshot(collection(db, "users"), (snapshot) => {
         mockDatabase = [];
-
         snapshot.forEach((doc) => {
             const data = doc.data();
             mockDatabase.push({
@@ -20,18 +19,18 @@ function loadDataFromFirebase() {
                 gifts: data.gifts || []
             });
         });
-        syncSubscriptionsWithFriends();
+        syncAllButtons();
         checkBirthdays();
     });
 
     watchAuthState((user) => {
         if (user) {
             currentUserId = user.uid;
-            onSnapshot(doc(db, "users", user.uid), (doc) => {
-                if (doc.exists()) {
-                    const data = doc.data();
+            onSnapshot(doc(db, "users", user.uid), (docSnapshot) => {
+                if (docSnapshot.exists()) {
+                    const data = docSnapshot.data();
                     currentUserFriends = data.friends || [];
-                    syncSubscriptionsWithFriends();
+                    syncAllButtons();
                     checkBirthdays();
                 }
             });
@@ -58,12 +57,32 @@ function toggleCardButtons(friendId, isSubscribed) {
 }
 
 function syncAllButtons() {
-    let currentSubscriptions = JSON.parse(localStorage.getItem('mySubscriptions')) || [];
-
     mockDatabase.forEach(friend => {
-        const isSubscribed = currentSubscriptions.includes(friend.id);
+        const isSubscribed = currentUserFriends.includes(friend.id);
         toggleCardButtons(friend.id, isSubscribed);
     });
+}
+
+function renderNotification(name, message, color) {
+    let notifyZone = document.getElementById('notification-zone');
+
+    let bgColor = '#fff3e0';
+    let borderColor = '#ffb74d';
+
+    if (color === 'red') {
+        bgColor = '#ffebee';
+        borderColor = '#ef5350';
+    } else if (color === 'yellow') {
+        bgColor = '#fffde7';
+        borderColor = '#fff176';
+    }
+
+    let alertHTML = `
+        <div style="background-color: ${bgColor}; border-left: 5px solid ${borderColor}; padding: 12px; margin-bottom: 10px; border-radius: 4px; color: #333;">
+            <strong>${name}</strong>: ${message}
+        </div>
+    `;
+    notifyZone.innerHTML += alertHTML;
 }
 
 async function subscribeToFriend(friendId) {
@@ -96,19 +115,21 @@ async function unsubscribeFromFriend(friendId) {
     checkBirthdays();
 }
 
-function subscribeToGroup(groupName) {
-    let currentSubscriptions = JSON.parse(localStorage.getItem('mySubscriptions')) || [];
+async function subscribeToGroup(groupName) {
     let addedCount = 0;
 
     mockDatabase.forEach(user => {
-        if (user.groups.includes(groupName) && !currentSubscriptions.includes(user.id)) {
-            currentSubscriptions.push(user.id);
+        if (user.groups.includes(groupName) && !currentUserFriends.includes(user.id)) {
+            currentUserFriends.push(user.id);
             addedCount++;
         }
     });
 
-    if (addedCount > 0) {
-        localStorage.setItem('mySubscriptions', JSON.stringify(currentSubscriptions));
+    if (addedCount > 0 && currentUserId) {
+        const userRef = doc(db, "users", currentUserId);
+        await updateDoc(userRef, {
+            friends: currentUserFriends
+        });
         syncAllButtons();
         checkBirthdays();
     }
@@ -122,7 +143,7 @@ function checkBirthdays() {
     today.setHours(0, 0, 0, 0);
     let found = false;
 
-    currentSubscriptions.forEach(id => {
+    currentUserFriends.forEach(id => {
         let friend = mockDatabase.find(user => user.id === id);
         if (!friend || !friend.birthday) return;
 
@@ -148,34 +169,13 @@ function checkBirthdays() {
         }
     });
 
-    if (!found && currentSubscriptions.length > 0) {
+    if (!found && currentUserFriends.length > 0) {
         notifyZone.innerHTML = `
             <div style="background-color: #e8f5e9; border-left: 5px solid #66bb6a; padding: 12px; margin-bottom: 10px; border-radius: 4px; color: #2e7d32;">
                 🎯 У ваших друзей нет ближайших дней рождения
             </div>
         `;
     }
-}
-
-function renderNotification(name, message, color) {
-    let notifyZone = document.getElementById('notification-zone');
-    let bgColor = '#fff3e0';
-    let borderColor = '#ffb74d';
-
-    if (color === 'red') {
-        bgColor = '#ffebee';
-        borderColor = '#ef5350';
-    } else if (color === 'yellow') {
-        bgColor = '#fffde7';
-        borderColor = '#fff176';
-    }
-
-    let alertHTML = `
-        <div style="background-color: ${bgColor}; border-left: 5px solid ${borderColor}; padding: 12px; margin-bottom: 10px; border-radius: 4px; color: #333;">
-            <strong>${name}</strong>: ${message}
-        </div>
-    `;
-    notifyZone.innerHTML += alertHTML;
 }
 
 function addToGoogleCalendar(friendId) {
@@ -212,5 +212,4 @@ window.subscribeToGroup = subscribeToGroup;
 window.addToGoogleCalendar = addToGoogleCalendar;
 
 loadDataFromFirebase();
-
 setInterval(checkBirthdays, 15000);
