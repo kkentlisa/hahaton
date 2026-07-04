@@ -6,11 +6,27 @@ import {
     onSnapshot,
     serverTimestamp,
     doc,
-    setDoc,
     updateDoc,
     arrayUnion,
     arrayRemove
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+const USER_PALETTE = [
+    { bg: "var(--color-navy)",  text: "var(--color-surface)" },
+    { bg: "var(--color-rose)",  text: "var(--color-surface)" },
+    { bg: "var(--color-coral)", text: "var(--color-surface)" },
+    { bg: "var(--color-peach)", text: "var(--color-navy)" },
+    { bg: "var(--color-gold)",  text: "var(--color-navy)" },
+];
+
+function paletteForSender(name) {
+    let hash = 0;
+    for (let i = 0; i < name.length; i++) {
+        hash = (hash << 5) - hash + name.charCodeAt(i);
+        hash |= 0;
+    }
+    return USER_PALETTE[Math.abs(hash) % USER_PALETTE.length];
+}
 
 export function initChatInterface(chatId, formId, inputId, messagesId, currentUserName) {
     const form = document.getElementById(formId);
@@ -54,6 +70,11 @@ export function initChatInterface(chatId, formId, inputId, messagesId, currentUs
 
             const isOwn = data.sender === currentUserName;
             msgElement.className = `msg ${isOwn ? "msg--own" : "msg--other"}`;
+            if (!isOwn) {
+                const palette = paletteForSender(data.sender);
+                msgElement.style.setProperty("--msg-color", palette.bg);
+                msgElement.style.setProperty("--msg-text-color", palette.text);
+            }
 
             let timeStr = "⏳";
             if (data.timestamp) {
@@ -98,17 +119,6 @@ export function initChatInterface(chatId, formId, inputId, messagesId, currentUs
     });
 }
 
-export function initSubscribeButton(friendId, buttonId, currentUserName) {
-    const btn = document.getElementById(buttonId);
-    if (!btn) return;
-
-    const chatRef = doc(window.db, "chats", friendId);
-
-    onSnapshot(chatRef, (snap) => {
-        const participants = snap.exists() ? (snap.data().participants || []) : [];
-        const isSubscribed = participants.includes(currentUserName);
-    });
-}
 
 function escapeHtml(str) {
     if (!str) return "";
@@ -118,4 +128,21 @@ function escapeHtml(str) {
         .replace(/>/g, '&gt;')
         .replace(/"/g, '&quot;')
         .replace(/'/g, '&#39;');
+}
+
+export function initChatOverlay(friendId) {
+    const overlay = document.getElementById("js-chat-overlay");
+    if (!overlay) return;
+
+    function checkAccess() {
+        const friends = window.currentUser?.friends || [];
+        const hasAccess = friends.includes(friendId);
+        overlay.classList.toggle("chat-overlay--hidden", hasAccess);
+    }
+
+    // Проверяем сразу если данные уже есть
+    checkAccess();
+
+    // И при каждом обновлении данных пользователя
+    window.addEventListener("user-data-updated", checkAccess);
 }

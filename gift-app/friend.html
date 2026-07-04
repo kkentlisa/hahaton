@@ -8,8 +8,12 @@
     <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400..700&family=Manrope:wght@400;600;700;800&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
 
+    <script type="module" src="https://unpkg.com/emoji-picker-element@^1/index.js"></script>
+
     <link rel="stylesheet" href="css/style.css">
-    <link rel="stylesheet" href="css/profiles.css">
+    <link rel="stylesheet" href="css/utils.css">
+    <link rel="stylesheet" href="css/friends-grid.css">
+    <link rel="stylesheet" href="css/profile.css">
     <link rel="stylesheet" href="css/chat.css">
 </head>
 <body>
@@ -30,13 +34,21 @@
 <main class="page-container">
     <a href="index.html" class="back-link">
         <i data-lucide="arrow-left" style="width:16px;"></i>
-        Все друзья
+        Назад
     </a>
 
     <div class="friend-layout">
         <div id="friend-profile-content"></div>
 
         <aside class="chat-wrap">
+
+            <div class="chat-overlay" id="js-chat-overlay">
+                <div class="chat-overlay__card">
+                    <div class="chat-overlay__icon">🔒</div>
+                    <p class="chat-overlay__title">Чат недоступен</p>
+                    <p class="chat-overlay__sub">Добавьте пользователя в друзья, чтобы видеть обсуждение подарка</p>
+                </div>
+            </div>
             <div class="chat-head">
                 <div class="chat-head__avatar" id="js-chat-avatar">
                     <img src="assets/default-avatar.png" alt="" onerror="this.style.display='none'; this.parentElement.textContent='🎂'" />
@@ -45,31 +57,13 @@
                     <span class="chat-head__name" id="js-chat-name">Обсуждение подарка</span>
                     <span class="chat-head__sub">только для друзей · именинник не видит</span>
                 </div>
-                <div class="chat-head__actions">
-                    <button class="chat-icon-btn" title="Поиск">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-                        </svg>
-                    </button>
-                </div>
-            </div>
-
-            <div class="chat-pinned" id="js-pinned" style="display:none">
-                <div class="chat-pinned__bar"></div>
-                <div class="chat-pinned__body">
-                    <span class="chat-pinned__label">Закреплено</span>
-                    <span class="chat-pinned__text" id="js-pinned-text"></span>
-                </div>
-                <svg class="chat-pinned__close" id="js-pinned-close" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-                    <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-                </svg>
             </div>
 
             <div class="chat-messages" id="js-chat-messages"></div>
 
             <div class="chat-composer">
                 <form class="chat-form" id="js-chat-form" autocomplete="off">
-                    <button type="button" class="chat-icon-btn" title="Эмодзи">
+                    <button type="button" class="chat-icon-btn" id="js-emoji-btn" title="Эмодзи">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <circle cx="12" cy="12" r="10"/>
                             <path d="M8 14s1.5 2 4 2 4-2 4-2"/>
@@ -85,16 +79,65 @@
                         </svg>
                     </button>
                 </form>
+                <emoji-picker id="js-emoji-picker" class="emoji-popup" style="display:none"></emoji-picker>
             </div>
         </aside>
     </div>
 </main>
 
+<template id="friend-profile-template">
+    <section class="profile-hero">
+        <div class="profile-hero__banner">
+            <div class="profile-hero__countdown">
+                <div class="profile-hero__countdown-number js-days"></div>
+                <div class="profile-hero__countdown-label"><span class="js-days-text"></span> до ДР</div>
+            </div>
+        </div>
+        <div class="profile-hero__body">
+            <div class="profile-hero__avatar js-avatar"></div>
+            <div class="profile-hero__info">
+                <h1 class="profile-hero__name js-name"></h1>
+                <div class="profile-hero__meta">
+                    <span><i data-lucide="calendar" style="width:16px; vertical-align:middle;"></i> <span class="js-date"></span></span>
+                </div>
+                <div class="profile-hero__groups js-groups"></div>
+                <div style="margin-top:12px; display:flex; gap:8px; flex-wrap:wrap;">
+                    <button class="btn js-friend-toggle-btn" type="button">
+                        <span class="js-friend-toggle-text"></span>
+                    </button>
+                    <button class="btn btn-secondary js-calendar-btn" type="button" hidden style="display:inline-flex; align-items:center; gap:4px;">
+                        <i data-lucide="calendar" style="width:14px; height:14px;"></i>
+                        В календарь
+                    </button>
+                </div>
+            </div>
+        </div>
+    </section>
+    <section>
+        <h2 class="section-title">Список подарков</h2>
+        <div class="wishlist js-wishlist"></div>
+    </section>
+</template>
+
+<template id="wishlist-item-template">
+    <div class="wishlist-item">
+        <div class="wishlist-item__icon">
+            <i data-lucide="gift" style="width:18px;"></i>
+        </div>
+        <span class="wishlist-item__title js-title"></span>
+    </div>
+</template>
+
+<template id="friend-not-found-template">
+    <p class="page-title">Пользователь не найден</p>
+</template>
+
 <script type="module" src="js/profiles.js"></script>
+<script type="module" src="js/notifications.js"></script>
 
 <script type="module">
     import { db } from "./js/config.js";
-    import { initChatInterface, initSubscribeButton } from "./js/chat.js";
+    import { initChatInterface, initChatOverlay } from "./js/chat.js";
 
     window.db = db;
 
@@ -110,7 +153,7 @@
             "js-chat-messages",
             userName
         );
-        initSubscribeButton(friendId, "js-subscribe-btn", userName);
+        initChatOverlay(friendId);
     }
 
     if (window.currentUser) {
@@ -119,15 +162,44 @@
         window.addEventListener("currentUser-ready", startChat);
     }
 
-    window.addEventListener("chat-pinned-update", (e) => {
-        const wrap = document.getElementById("js-pinned");
-        const txt  = document.getElementById("js-pinned-text");
-        if (e.detail) { wrap.style.display = "flex"; txt.textContent = e.detail; }
-        else wrap.style.display = "none";
+    const emojiBtn = document.getElementById("js-emoji-btn");
+    const emojiPicker = document.getElementById("js-emoji-picker");
+    const chatInput = document.getElementById("js-chat-input");
+
+    function closeEmojiPicker() {
+        emojiPicker.style.display = "none";
+    }
+
+    function toggleEmojiPicker() {
+        emojiPicker.style.display = (emojiPicker.style.display === "none") ? "block" : "none";
+    }
+
+    emojiBtn?.addEventListener("click", (e) => {
+        e.stopPropagation();
+        toggleEmojiPicker();
     });
 
-    document.getElementById("js-pinned-close")?.addEventListener("click", () => {
-        document.getElementById("js-pinned").style.display = "none";
+    emojiPicker?.addEventListener("emoji-click", (event) => {
+        const emoji = event.detail.unicode;
+        const start = chatInput.selectionStart ?? chatInput.value.length;
+        const end = chatInput.selectionEnd ?? chatInput.value.length;
+        chatInput.value = chatInput.value.slice(0, start) + emoji + chatInput.value.slice(end);
+        const cursor = start + emoji.length;
+        chatInput.focus();
+        chatInput.setSelectionRange(cursor, cursor);
+    });
+
+    document.addEventListener("click", (e) => {
+        if (emojiPicker.style.display !== "none" &&
+            !emojiPicker.contains(e.target) &&
+            e.target !== emojiBtn &&
+            !emojiBtn.contains(e.target)) {
+            closeEmojiPicker();
+        }
+    });
+
+    document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") closeEmojiPicker();
     });
 </script>
 </body>
