@@ -69,6 +69,17 @@ export function renderMyProfile() {
     const fileInput = node.querySelector(".js-avatar-input");
     const deleteBtn = node.querySelector(".js-avatar-delete");
 
+    const cropModal = node.querySelector(".js-crop-modal");
+    const imageToCrop = node.querySelector(".js-image-to-crop");
+    const cancelCropBtn = node.querySelector(".js-cancel-crop");
+    const saveCropBtn = node.querySelector(".js-save-crop");
+
+    const viewModal = node.querySelector(".js-view-modal");
+    const imageToView = node.querySelector(".js-image-to-view");
+    const closeViewBtn = node.querySelector(".js-close-view");
+
+    let cropperInstance = null;
+
     if (currentUser.avatar) {
         avatarContainer.innerHTML = `<img src="${currentUser.avatar}" alt="Аватар">`;
         deleteBtn.hidden = false;
@@ -81,24 +92,76 @@ export function renderMyProfile() {
         fileInput.click();
     });
 
-    fileInput.addEventListener("change", async (e) => {
+    fileInput.addEventListener("change", (e) => {
         const file = e.target.files[0];
         if (!file) return;
 
-        if (file.size > 1024 * 1024) {
-            alert("Файл слишком большой. Пожалуйста, выберите фото размером до 1 МБ.");
+        const maxFileSize = 5 * 1024 * 1024;
+        if (file.size > maxFileSize) {
+            alert("Файл слишком большой. Пожалуйста, выберите фото размером до 5 МБ.");
             return;
         }
 
-        const fileReader = new FileReader();
-        fileReader.onload = async (event) => {
-            const base64String = event.target.result;
+        const objectUrl = URL.createObjectURL(file);
+        imageToCrop.src = objectUrl;
+        cropModal.hidden = false;
 
-            await updateDoc(doc(db, "users", currentUserId), {
-                avatar: base64String
+        if (cropperInstance) {
+            cropperInstance.destroy();
+        }
+
+        setTimeout(() => {
+            cropperInstance = new window.Cropper(imageToCrop, {
+                aspectRatio: 1,
+                viewMode: 1,
+                dragMode: 'move'
             });
-        };
-        fileReader.readAsDataURL(file);
+        }, 50);
+
+        fileInput.value = "";
+    });
+
+    cancelCropBtn.addEventListener("click", () => {
+        cropModal.hidden = true;
+        if (cropperInstance) cropperInstance.destroy();
+    });
+
+    saveCropBtn.addEventListener("click", async () => {
+        if (!cropperInstance) return;
+
+        const croppedCanvas = cropperInstance.getCroppedCanvas({
+            width: 400,
+            height: 400
+        });
+
+        const base64String = croppedCanvas.toDataURL("image/jpeg", 0.8);
+
+        await updateDoc(doc(db, "users", currentUserId), {
+            avatar: base64String
+        });
+
+        cropModal.hidden = true;
+        cropperInstance.destroy();
+
+        avatarContainer.innerHTML = `<img src="${base64String}" alt="Аватар">`;
+        deleteBtn.hidden = false;
+    });
+
+    avatarContainer.addEventListener("click", (e) => {
+        if (e.target.tagName === "IMG") {
+            imageToView.src = e.target.src;
+            viewModal.hidden = false;
+        }
+    });
+
+    closeViewBtn.addEventListener("click", () => {
+        viewModal.hidden = true;
+    });
+
+    viewModal.addEventListener("click", (e) => {
+        if (e.target === viewModal) {
+            viewModal.hidden = true;
+        }
     });
 
     deleteBtn.addEventListener("click", async () => {

@@ -12,6 +12,9 @@
     <link rel="stylesheet" href="css/utils.css">
     <link rel="stylesheet" href="css/friends-grid.css">
     <link rel="stylesheet" href="css/profile.css">
+
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
 </head>
 <body>
 
@@ -53,20 +56,16 @@
     <section class="profile-hero">
         <div class="profile-hero__banner"></div>
         <div class="profile-hero__body">
-
             <div class="profile-hero__avatar-wrapper">
-                <div class="profile-hero__avatar js-avatar"></div>
-
+                <div class="profile-hero__avatar js-avatar" style="cursor: pointer;"></div>
                 <button class="avatar-upload-btn js-avatar-upload" type="button" title="Загрузить фото">
                     <i data-lucide="camera" style="width: 16px;"></i>
                 </button>
                 <input type="file" class="js-avatar-input" accept="image/png, image/jpeg, image/webp" hidden>
             </div>
-
             <div class="profile-hero__info">
                 <h1 class="profile-hero__name js-name"></h1>
                 <button class="avatar-delete-btn js-avatar-delete" hidden>Удалить фото</button>
-
                 <div class="profile-hero__date">
                     <i data-lucide="calendar" style="width:16px; vertical-align:middle;"></i>
                     <span class="js-date"></span>
@@ -75,6 +74,26 @@
             </div>
         </div>
     </section>
+
+    <div class="modal-overlay js-crop-modal" hidden>
+        <div class="modal-content">
+            <h3 style="margin-bottom: 16px;">Обрезка фото</h3>
+            <div class="crop-container">
+                <img class="js-image-to-crop" src="" alt="Оригинал">
+            </div>
+            <div class="modal-actions" style="margin-top: 16px;">
+                <button class="btn btn-secondary js-cancel-crop" type="button">Отмена</button>
+                <button class="btn btn-primary js-save-crop" type="button">Сохранить</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay js-view-modal" hidden>
+        <div class="modal-content view-modal-content">
+            <span class="close-modal-btn js-close-view">&times;</span>
+            <img class="js-image-to-view" src="" alt="Аватар крупным планом">
+        </div>
+    </div>
 </template>
 
 <template id="my-groups-template">

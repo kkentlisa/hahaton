@@ -21,7 +21,6 @@ export function renderFriendProfile() {
 
     const days = getDaysToBirthday(friend.birthday);
     const daysText = formatDaysText(days);
-    const initials = getInitials(friend.name);
     const dateStr = formatBirthDate(friend.birthday, true);
     const isFriend = currentUser?.friends?.includes(friendId) || false;
 
@@ -29,12 +28,32 @@ export function renderFriendProfile() {
     const node = profileTemplate.content.cloneNode(true);
 
     const avatarContainer = node.querySelector(".js-avatar");
+    const viewModal = node.querySelector(".js-view-modal");
+    const imageToView = node.querySelector(".js-image-to-view");
+    const closeViewBtn = node.querySelector(".js-close-view");
 
     if (friend.avatar) {
         avatarContainer.innerHTML = `<img src="${friend.avatar}" alt="${friend.name}">`;
     } else {
         avatarContainer.textContent = getInitials(friend.name);
     }
+
+    avatarContainer.addEventListener("click", (e) => {
+        if (e.target.tagName === "IMG") {
+            imageToView.src = e.target.src;
+            viewModal.hidden = false;
+        }
+    });
+
+    closeViewBtn.addEventListener("click", () => {
+        viewModal.hidden = true;
+    });
+
+    viewModal.addEventListener("click", (e) => {
+        if (e.target === viewModal) {
+            viewModal.hidden = true;
+        }
+    });
 
     node.querySelector(".js-days").textContent = days;
     node.querySelector(".js-days-text").textContent = daysText;
