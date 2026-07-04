@@ -1,5 +1,5 @@
 ﻿import { db } from './config.js';
-import { collection, onSnapshot, doc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { collection, onSnapshot, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 import { watchAuthState } from './auth.js';
 
 let mockDatabase = [];
@@ -9,7 +9,6 @@ let currentUserId = null;
 function loadDataFromFirebase() {
     onSnapshot(collection(db, "users"), (snapshot) => {
         mockDatabase = [];
-
         snapshot.forEach((doc) => {
             const data = doc.data();
             mockDatabase.push({
@@ -20,42 +19,23 @@ function loadDataFromFirebase() {
                 gifts: data.gifts || []
             });
         });
-        syncSubscriptionsWithFriends();
+        syncAllButtons();
         checkBirthdays();
     });
 
     watchAuthState((user) => {
         if (user) {
             currentUserId = user.uid;
-            onSnapshot(doc(db, "users", user.uid), (doc) => {
-                if (doc.exists()) {
-                    const data = doc.data();
+            onSnapshot(doc(db, "users", user.uid), (docSnapshot) => {
+                if (docSnapshot.exists()) {
+                    const data = docSnapshot.data();
                     currentUserFriends = data.friends || [];
-                    syncSubscriptionsWithFriends();
+                    syncAllButtons();
                     checkBirthdays();
                 }
             });
         }
     });
-}
-
-function syncSubscriptionsWithFriends() {
-    if (currentUserFriends.length === 0) {
-        localStorage.setItem('mySubscriptions', JSON.stringify([]));
-        return;
-    }
-
-    const currentSubscriptions = JSON.parse(localStorage.getItem('mySubscriptions')) || [];
-    const newSubscriptions = [];
-
-    currentUserFriends.forEach(friendId => {
-        if (!newSubscriptions.includes(friendId)) {
-            newSubscriptions.push(friendId);
-        }
-    });
-
-    localStorage.setItem('mySubscriptions', JSON.stringify(newSubscriptions));
-    syncAllButtons();
 }
 
 function toggleCardButtons(friendId, isSubscribed) {
@@ -77,63 +57,93 @@ function toggleCardButtons(friendId, isSubscribed) {
 }
 
 function syncAllButtons() {
-    let currentSubscriptions = JSON.parse(localStorage.getItem('mySubscriptions')) || [];
-
     mockDatabase.forEach(friend => {
-        const isSubscribed = currentSubscriptions.includes(friend.id);
+        const isSubscribed = currentUserFriends.includes(friend.id);
         toggleCardButtons(friend.id, isSubscribed);
     });
 }
 
-function subscribeToFriend(friendId) {
-    let currentSubscriptions = JSON.parse(localStorage.getItem('mySubscriptions')) || [];
-    if (!currentSubscriptions.includes(friendId)) {
-        currentSubscriptions.push(friendId);
-        localStorage.setItem('mySubscriptions', JSON.stringify(currentSubscriptions));
+function renderNotification(name, message, color) {
+    let notifyZone = document.getElementById('notification-zone');
+
+    let bgColor = '#fff3e0';
+    let borderColor = '#ffb74d';
+
+    if (color === 'red') {
+        bgColor = '#ffebee';
+        borderColor = '#ef5350';
+    } else if (color === 'yellow') {
+        bgColor = '#fffde7';
+        borderColor = '#fff176';
+    }
+
+    let alertHTML = `
+        <div style="background-color: ${bgColor}; border-left: 5px solid ${borderColor}; padding: 12px; margin-bottom: 10px; border-radius: 4px; color: #333;">
+            <strong>${name}</strong>: ${message}
+        </div>
+    `;
+    notifyZone.innerHTML += alertHTML;
+}
+
+async function subscribeToFriend(friendId) {
+    if (!currentUserFriends.includes(friendId)) {
+        currentUserFriends.push(friendId);
+
+        if (currentUserId) {
+            const userRef = doc(db, "users", currentUserId);
+            await updateDoc(userRef, {
+                friends: currentUserFriends
+            });
+        }
 
         toggleCardButtons(friendId, true);
         checkBirthdays();
     }
 }
 
-function unsubscribeFromFriend(friendId) {
-    let currentSubscriptions = JSON.parse(localStorage.getItem('mySubscriptions')) || [];
-    currentSubscriptions = currentSubscriptions.filter(id => id !== friendId);
-    localStorage.setItem('mySubscriptions', JSON.stringify(currentSubscriptions));
+async function unsubscribeFromFriend(friendId) {
+    currentUserFriends = currentUserFriends.filter(id => id !== friendId);
+
+    if (currentUserId) {
+        const userRef = doc(db, "users", currentUserId);
+        await updateDoc(userRef, {
+            friends: currentUserFriends
+        });
+    }
 
     toggleCardButtons(friendId, false);
     checkBirthdays();
 }
 
-function subscribeToGroup(groupName) {
-    let currentSubscriptions = JSON.parse(localStorage.getItem('mySubscriptions')) || [];
+async function subscribeToGroup(groupName) {
     let addedCount = 0;
 
     mockDatabase.forEach(user => {
-        if (user.groups.includes(groupName) && !currentSubscriptions.includes(user.id)) {
-            currentSubscriptions.push(user.id);
+        if (user.groups.includes(groupName) && !currentUserFriends.includes(user.id)) {
+            currentUserFriends.push(user.id);
             addedCount++;
         }
     });
 
-    if (addedCount > 0) {
-        localStorage.setItem('mySubscriptions', JSON.stringify(currentSubscriptions));
+    if (addedCount > 0 && currentUserId) {
+        const userRef = doc(db, "users", currentUserId);
+        await updateDoc(userRef, {
+            friends: currentUserFriends
+        });
         syncAllButtons();
         checkBirthdays();
     }
 }
 
 function checkBirthdays() {
-    let currentSubscriptions = JSON.parse(localStorage.getItem('mySubscriptions')) || [];
     let notifyZone = document.getElementById('notification-zone');
     notifyZone.innerHTML = '';
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-
     let found = false;
 
-    currentSubscriptions.forEach(id => {
+    currentUserFriends.forEach(id => {
         let friend = mockDatabase.find(user => user.id === id);
         if (!friend || !friend.birthday) return;
 
@@ -159,34 +169,13 @@ function checkBirthdays() {
         }
     });
 
-    if (!found && currentSubscriptions.length > 0) {
+    if (!found && currentUserFriends.length > 0) {
         notifyZone.innerHTML = `
             <div style="background-color: #e8f5e9; border-left: 5px solid #66bb6a; padding: 12px; margin-bottom: 10px; border-radius: 4px; color: #2e7d32;">
                 🎯 У ваших друзей нет ближайших дней рождения
             </div>
         `;
     }
-}
-
-function renderNotification(name, message, color) {
-    let notifyZone = document.getElementById('notification-zone');
-    let bgColor = '#fff3e0';
-    let borderColor = '#ffb74d';
-
-    if (color === 'red') {
-        bgColor = '#ffebee';
-        borderColor = '#ef5350';
-    } else if (color === 'yellow') {
-        bgColor = '#fffde7';
-        borderColor = '#fff176';
-    }
-
-    let alertHTML = `
-        <div style="background-color: ${bgColor}; border-left: 5px solid ${borderColor}; padding: 12px; margin-bottom: 10px; border-radius: 4px; color: #333;">
-            <strong>${name}</strong>: ${message}
-        </div>
-    `;
-    notifyZone.innerHTML += alertHTML;
 }
 
 function addToGoogleCalendar(friendId) {
@@ -223,5 +212,4 @@ window.subscribeToGroup = subscribeToGroup;
 window.addToGoogleCalendar = addToGoogleCalendar;
 
 loadDataFromFirebase();
-
 setInterval(checkBirthdays, 15000);
