@@ -26,7 +26,7 @@ watchAuthState((authUser) => {
         return;
     }
 
-    setCurrentUserId(authUser.uid);
+    setCurrentUserId(authUser.id);
 
     if (usersUnsubscribe) return;
 
