@@ -1,8 +1,10 @@
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
 import {
     createUserWithEmailAndPassword,
     signInWithEmailAndPassword,
     signOut,
     onAuthStateChanged,
+    getAuth,
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 import {
     doc,
@@ -13,7 +15,10 @@ import {
     where,
     getDocs,
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-import { auth, db } from "./config.js";
+import { auth, db, firebaseConfig } from "./config.js";
+
+const adminCreateApp = initializeApp(firebaseConfig, "AdminCreate");
+const adminCreateAuth = getAuth(adminCreateApp);
 
 const USERNAME_DOMAIN = "wishbird.local";
 
@@ -58,6 +63,42 @@ export async function registerUser({ username, password, name, birthday, groups,
         gifts: gifts || [],
         friends: [],
     });
+
+    return credential.user;
+}
+
+
+export async function createUserAsAdmin({ username, password, name, birthday, groups, gifts, friends }) {
+    const cleanUsername = normalizeUsername(username);
+
+    if (!cleanUsername) throw new Error("Введите логин");
+    if (await isUsernameTaken(cleanUsername)) {
+        throw new Error("Этот логин уже занят, выберите другой");
+    }
+
+    let credential;
+    try {
+        credential = await createUserWithEmailAndPassword(adminCreateAuth, usernameToEmail(cleanUsername), password);
+    } catch (error) {
+        if (error.code === "auth/email-already-in-use") {
+            throw new Error("Этот логин уже занят, выберите другой");
+        }
+        if (error.code === "auth/weak-password") {
+            throw new Error("Пароль слишком короткий (минимум 6 символов)");
+        }
+        throw error;
+    }
+
+    await setDoc(doc(db, "users", credential.user.uid), {
+        username: cleanUsername,
+        name,
+        birthday,
+        groups: groups || [],
+        gifts: gifts || [],
+        friends: friends || [],
+    });
+
+    await signOut(adminCreateAuth);
 
     return credential.user;
 }

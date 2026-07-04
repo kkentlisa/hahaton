@@ -8,7 +8,7 @@ import { collection,
     arrayRemove
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 import { db } from "./config.js";
-import { watchAuthState, checkIsAdmin, logout } from "./auth.js";
+import { watchAuthState, checkIsAdmin, logout, createUserAsAdmin } from "./auth.js";
 
 const usersCol = collection(db, "users");
 const groupsCol = collection(db, "groups");
@@ -152,6 +152,12 @@ window.openUserModal = function openUserModal(userId = null) {
 
     renderGroupCheckboxes(user?.groups || []);
     renderFriendCheckboxes(user?.friends || [], userId);
+
+    const credentialsFields = document.getElementById('userCredentialsFields');
+    credentialsFields.style.display = user ? 'none' : '';
+    document.getElementById('userUsername').value = '';
+    document.getElementById('userPassword').value = '';
+
     userModal.classList.remove('hidden');
 };
 
@@ -187,8 +193,21 @@ userForm.addEventListener('submit', async (e) => {
         await updateDoc(doc(db, "users", editingId), payload);
         showToast("Изменения сохранены");
     } else {
-        await addDoc(usersCol, payload);
-        showToast("Пользователь добавлен");
+        const username = document.getElementById('userUsername').value.trim();
+        const password = document.getElementById('userPassword').value;
+
+        if (!username || !password) {
+            showToast("Укажите логин и пароль для нового пользователя.", true);
+            return;
+        }
+
+        try {
+            await createUserAsAdmin({ username, password, ...payload });
+            showToast(`Пользователь добавлен. Логин: ${username}, пароль: ${password}`);
+        } catch (error) {
+            showToast(error.message, true);
+            return;
+        }
     }
 
     closeUserModal();
@@ -326,25 +345,44 @@ window.importUsers = async function importUsers() {
 
     const existingGroupNames = new Set(groups.map((g) => g.name));
     const newGroupNames = new Set();
+    const failed = [];
+    let successCount = 0;
 
     for (const user of parsedUsers) {
-        await addDoc(usersCol, {
-            name: user.name || "",
-            birthday: user.birthday || "",
-            gifts: Array.isArray(user.gifts) ? user.gifts : [],
-            groups: Array.isArray(user.groups) ? user.groups : [],
-            friends: [],
-        });
-        (user.groups || []).forEach((g) => {
-            if (!existingGroupNames.has(g)) newGroupNames.add(g);
-        });
+        const label = user.name || user.username || "(без имени)";
+
+        if (!user.username || !user.password) {
+            failed.push(`${label} — нет логина/пароля`);
+            continue;
+        }
+
+        try {
+            await createUserAsAdmin({
+                username: user.username,
+                password: user.password,
+                name: user.name || "",
+                birthday: user.birthday || "",
+                gifts: Array.isArray(user.gifts) ? user.gifts : [],
+                groups: Array.isArray(user.groups) ? user.groups : [],
+                friends: [],
+            });
+            successCount++;
+            (user.groups || []).forEach((g) => {
+                if (!existingGroupNames.has(g)) newGroupNames.add(g);
+            });
+        } catch (error) {
+            failed.push(`${label} — ${error.message}`);
+        }
     }
 
     for (const name of newGroupNames) {
         await addDoc(groupsCol, { name });
     }
 
-    showToast(`Успешно добавлено пользователей: ${parsedUsers.length}`);
+    const summary = failed.length === 0
+        ? `Успешно добавлено пользователей: ${successCount}`
+        : `Добавлено ${successCount} из ${parsedUsers.length}. Пропущены: ${failed.join('; ')}`;
+    showToast(summary, failed.length > 0);
     document.getElementById('jsonInput').value = "";
 };
 

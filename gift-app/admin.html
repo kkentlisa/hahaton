@@ -65,8 +65,8 @@
     <div id="panel-import" class="admin-panel hidden">
         <div class="import-card">
             <h2>Импорт пользователей (JSON)</h2>
-            <p>Массив объектов вида <code>{"name", "birthday" (YYYY-MM-DD), "gifts": [], "groups": []}</code>. Новые группы из импорта создадутся автоматически.</p>
-            <textarea id="jsonInput" placeholder='[{"name": "Иван", "birthday": "2000-01-01", "gifts": ["Книга"], "groups": ["HITS"]}]'></textarea>
+            <p>Массив объектов вида <code>{"username", "password" (мин. 6 символов), "name", "birthday" (YYYY-MM-DD), "gifts": [], "groups": []}</code>. Логин и пароль обязательны — по ним создаётся настоящий аккаунт для входа. Новые группы из импорта создадутся автоматически. Записи без логина/пароля или с уже занятым логином пропускаются, остальные всё равно добавятся.</p>
+            <textarea id="jsonInput" placeholder='[{"username": "ivan01", "password": "ivan123456", "name": "Иван", "birthday": "2000-01-01", "gifts": ["Книга"], "groups": ["HITS"]}]'></textarea>
             <button onclick="window.importUsers()" class="btn btn-primary">Добавить пользователей</button>
         </div>
     </div>
@@ -84,6 +84,16 @@
                 <span class="field__label">Дата рождения</span>
                 <input id="userBirthday" type="date" required>
             </label>
+            <div id="userCredentialsFields">
+                <label class="field">
+                    <span class="field__label">Логин (для входа пользователя)</span>
+                    <input id="userUsername" type="text">
+                </label>
+                <label class="field">
+                    <span class="field__label">Пароль</span>
+                    <input id="userPassword" type="text" placeholder="минимум 6 символов">
+                </label>
+            </div>
             <div class="field">
                 <span class="field__label">Группы</span>
                 <div id="userGroupCheckboxes" class="chip-toggles"></div>

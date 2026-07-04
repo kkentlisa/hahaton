@@ -2,7 +2,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebas
 import { getFirestore } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 import { getAuth } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
-const firebaseConfig = { apiKey: "AIzaSyAe4ZXtxKH119CrCwBXM7ZjXDyiH5n3tjU",
+export const firebaseConfig = { apiKey: "AIzaSyAe4ZXtxKH119CrCwBXM7ZjXDyiH5n3tjU",
     authDomain: "birthday-wishes-hits.firebaseapp.com",
     projectId: "birthday-wishes-hits",
     storageBucket: "birthday-wishes-hits.firebasestorage.app",
