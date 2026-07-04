@@ -1,5 +1,5 @@
 ﻿import { db } from './config.js';
-import { collection, onSnapshot, doc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { collection, onSnapshot, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 import { watchAuthState } from './auth.js';
 
 let mockDatabase = [];
@@ -39,25 +39,6 @@ function loadDataFromFirebase() {
     });
 }
 
-function syncSubscriptionsWithFriends() {
-    if (currentUserFriends.length === 0) {
-        localStorage.setItem('mySubscriptions', JSON.stringify([]));
-        return;
-    }
-
-    const currentSubscriptions = JSON.parse(localStorage.getItem('mySubscriptions')) || [];
-    const newSubscriptions = [];
-
-    currentUserFriends.forEach(friendId => {
-        if (!newSubscriptions.includes(friendId)) {
-            newSubscriptions.push(friendId);
-        }
-    });
-
-    localStorage.setItem('mySubscriptions', JSON.stringify(newSubscriptions));
-    syncAllButtons();
-}
-
 function toggleCardButtons(friendId, isSubscribed) {
     const subscribeBtn = document.getElementById(`subscribe-${friendId}`);
     const unsubscribeBtn = document.getElementById(`unsubscribe-${friendId}`);
@@ -85,21 +66,31 @@ function syncAllButtons() {
     });
 }
 
-function subscribeToFriend(friendId) {
-    let currentSubscriptions = JSON.parse(localStorage.getItem('mySubscriptions')) || [];
-    if (!currentSubscriptions.includes(friendId)) {
-        currentSubscriptions.push(friendId);
-        localStorage.setItem('mySubscriptions', JSON.stringify(currentSubscriptions));
+async function subscribeToFriend(friendId) {
+    if (!currentUserFriends.includes(friendId)) {
+        currentUserFriends.push(friendId);
+
+        if (currentUserId) {
+            const userRef = doc(db, "users", currentUserId);
+            await updateDoc(userRef, {
+                friends: currentUserFriends
+            });
+        }
 
         toggleCardButtons(friendId, true);
         checkBirthdays();
     }
 }
 
-function unsubscribeFromFriend(friendId) {
-    let currentSubscriptions = JSON.parse(localStorage.getItem('mySubscriptions')) || [];
-    currentSubscriptions = currentSubscriptions.filter(id => id !== friendId);
-    localStorage.setItem('mySubscriptions', JSON.stringify(currentSubscriptions));
+async function unsubscribeFromFriend(friendId) {
+    currentUserFriends = currentUserFriends.filter(id => id !== friendId);
+
+    if (currentUserId) {
+        const userRef = doc(db, "users", currentUserId);
+        await updateDoc(userRef, {
+            friends: currentUserFriends
+        });
+    }
 
     toggleCardButtons(friendId, false);
     checkBirthdays();
@@ -124,13 +115,11 @@ function subscribeToGroup(groupName) {
 }
 
 function checkBirthdays() {
-    let currentSubscriptions = JSON.parse(localStorage.getItem('mySubscriptions')) || [];
     let notifyZone = document.getElementById('notification-zone');
     notifyZone.innerHTML = '';
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-
     let found = false;
 
     currentSubscriptions.forEach(id => {
